@@ -1,0 +1,213 @@
+package com.hoop.hoopback.service;
+
+import com.hoop.hoopback.dto.request.CreateCommentRequest;
+import com.hoop.hoopback.dto.request.CreatePostRequest;
+import com.hoop.hoopback.dto.request.RepostRequest;
+import com.hoop.hoopback.dto.response.CommentDto;
+import com.hoop.hoopback.dto.response.PostDto;
+import com.hoop.hoopback.dto.response.UserSummaryDto;
+import com.hoop.hoopback.entity.*;
+import com.hoop.hoopback.exception.InvalidCredentialsException;
+import com.hoop.hoopback.repository.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class PostService {
+
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final LikeRepository likeRepository;
+    private final RepostRepository repostRepository;
+    private final UserRepository userRepository;
+
+    @Transactional
+    public PostDto createPost(String username, CreatePostRequest request) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+
+        Post post = Post.builder()
+                .author(user)
+                .content(request.content())
+                .build();
+
+        return mapToDto(postRepository.save(post), user);
+    }
+
+    @Transactional
+    public void deletePost(String username, Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));
+
+        if (!post.getAuthor().getUsername().equals(username)) {
+            throw new IllegalArgumentException("Вы не можете удалить чужой пост");
+        }
+
+        postRepository.delete(post);
+    }
+
+    @Transactional
+    public void likePost(String username, Long postId) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));
+
+        if (likeRepository.existsByUserAndPost(user, post)) {
+            return;
+        }
+
+        Like like = Like.builder()
+                .user(user)
+                .post(post)
+                .build();
+
+        likeRepository.save(like);
+    }
+
+    @Transactional
+    public void unlikePost(String username, Long postId) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));
+
+        likeRepository.findByUserAndPost(user, post)
+                .ifPresent(likeRepository::delete);
+    }
+
+    @Transactional
+    public CommentDto addComment(String username, Long postId, CreateCommentRequest request) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));
+
+        Comment comment = Comment.builder()
+                .author(user)
+                .post(post)
+                .content(request.content())
+                .build();
+
+        return mapToCommentDto(commentRepository.save(comment));
+    }
+
+    @Transactional
+    public PostDto repost(String username, Long postId, RepostRequest request) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+        Post originalPost = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));
+
+        // If it's a standard repost (no caption), we might want to check if already reposted
+        // But Twitter allows multiple quote-reposts and undoing a standard repost.
+        // For simplicity, let's allow multiple.
+
+        Repost repost = Repost.builder()
+                .user(user)
+                .originalPost(originalPost)
+                .caption(request.caption())
+                .build();
+
+        repostRepository.save(repost);
+
+        // Map to PostDto for the feed (a repost acts like a post in the feed)
+        return mapRepostToPostDto(repost, user);
+    }
+
+    public Page<PostDto> getFeed(String username, Pageable pageable) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+
+        List<User> following = userRepository.findFollowingByUsername(username);
+        following.add(user); // Include own posts
+
+        return postRepository.findAllByAuthorInOrderByCreatedAtDesc(following, pageable)
+                .map(post -> mapToDto(post, user));
+    }
+
+    public Page<PostDto> getGlobalFeed(String currentUsername, Pageable pageable) {
+        User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        return postRepository.findAllByOrderByCreatedAtDesc(pageable)
+                .map(post -> mapToDto(post, currentUser));
+    }
+
+    public Page<PostDto> getUserPosts(String username, String currentUsername, Pageable pageable) {
+        User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        return postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username, pageable)
+                .map(post -> mapToDto(post, currentUser));
+    }
+
+    public List<CommentDto> getPostComments(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));
+        return commentRepository.findAllByPostOrderByCreatedAtAsc(post).stream()
+                .map(this::mapToCommentDto)
+                .collect(Collectors.toList());
+    }
+
+    private PostDto mapToDto(Post post, User currentUser) {
+        boolean isLiked = currentUser != null && likeRepository.existsByUserAndPost(currentUser, post);
+        boolean isReposted = currentUser != null && repostRepository.existsByUserAndOriginalPost(currentUser, post);
+
+        return new PostDto(
+                post.getId(),
+                mapUserToSummaryDto(post.getAuthor()),
+                post.getContent(),
+                post.getCreatedAt(),
+                likeRepository.countByPost(post),
+                commentRepository.countByPost(post),
+                repostRepository.countByOriginalPost(post),
+                isLiked,
+                isReposted,
+                null, // Not a repost
+                null
+        );
+    }
+
+    // Helper for feed displaying reposts
+    private PostDto mapRepostToPostDto(Repost repost, User currentUser) {
+        Post original = repost.getOriginalPost();
+        PostDto originalDto = mapToDto(original, currentUser);
+        
+        return new PostDto(
+                repost.getId(),
+                mapUserToSummaryDto(repost.getUser()),
+                repost.getCaption() != null ? repost.getCaption() : "",
+                repost.getCreatedAt(),
+                originalDto.likesCount(), // Standard Twitter/X behavior: show original interaction counts
+                originalDto.commentsCount(),
+                originalDto.repostsCount(),
+                originalDto.isLiked(),
+                originalDto.isReposted(),
+                originalDto,
+                repost.getCaption()
+        );
+    }
+
+    private CommentDto mapToCommentDto(Comment comment) {
+        return new CommentDto(
+                comment.getId(),
+                mapUserToSummaryDto(comment.getAuthor()),
+                comment.getContent(),
+                comment.getCreatedAt()
+        );
+    }
+
+    private UserSummaryDto mapUserToSummaryDto(User user) {
+        return new UserSummaryDto(
+                user.getId(),
+                user.getUsername(),
+                user.getPositions(),
+                user.getHeight(),
+                userRepository.countFollowersByUserId(user.getId())
+        );
+    }
+}

@@ -1,0 +1,129 @@
+# ===========================
+# HoopConnect — Root .gitignore
+# ===========================
+
+# ──────────────────────────
+# Java / Spring Boot (hoopBack)
+# ──────────────────────────
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+hoopBack/target/
+hoopBack/.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Gradle (если появится)
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Spring Boot DevTools
+/.springBeans
+.sts4-cache/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code (Java)
+.vscode/
+
+# Log files
+*.log
+logs/
+
+# Application secrets — НИКОГДА не коммитить!
+hoopBack/src/main/resources/application-secret.properties
+hoopBack/src/main/resources/application-local.properties
+hoopBack/src/main/resources/application-prod.properties
+
+# ──────────────────────────
+# Node.js / Vite / React (hoopFront)
+# ──────────────────────────
+hoopFront/node_modules/
+hoopFront/dist/
+hoopFront/.vite/
+hoopFront/coverage/
+
+# Переменные окружения
+hoopFront/.env
+hoopFront/.env.local
+hoopFront/.env.*.local
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Cache
+hoopFront/.eslintcache
+hoopFront/.stylelintcache
+
+# ──────────────────────────
+# OS & Editors
+# ──────────────────────────
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# JetBrains
+.idea/
+*.iml
+
+# ──────────────────────────
+# Docker (если появится)
+# ──────────────────────────
+docker-compose.override.yml
+.env.docker
+
+# ──────────────────────────
+# Разное
+# ──────────────────────────
+*.swp
+*.swo
+.cache/

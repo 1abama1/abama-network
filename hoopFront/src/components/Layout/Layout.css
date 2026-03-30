@@ -1,0 +1,73 @@
+.layout-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  border-right: 1px solid var(--border);
+  min-width: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-inner {
+  padding: 0;
+  flex: 1;
+}
+
+.right-sidebar {
+  width: 350px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.search-bar-container {
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+}
+
+.trending-games, .who-to-follow {
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+}
+
+.trending-games h3, .who-to-follow h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+@media (max-width: 1200px) {
+  .right-sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 968px) {
+  .main-content {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .layout-container {
+    flex-direction: column;
+    padding-bottom: 70px; /* Space for bottom nav on mobile if implemented */
+  }
+}

@@ -1,0 +1,102 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { LogIn, Trophy } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import axiosInstance from '../../api/axiosConfig';
+import './Auth.css';
+
+const LoginPage = () => {
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await axiosInstance.post('/auth/login', { identifier, password });
+      const { user, accessToken, refreshToken } = response.data;
+      login(user, accessToken, refreshToken);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-container">
+      <div className="auth-visual">
+        <motion.div 
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="visual-content"
+        >
+          <Trophy size={80} color="var(--primary)" />
+          <h1>HoopConnect</h1>
+          <p>Where the game never stops.</p>
+        </motion.div>
+      </div>
+      
+      <motion.div 
+        initial={{ x: 50, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="auth-form-wrapper glass"
+      >
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-header">
+            <h2>Welcome Back</h2>
+            <p>Login to your account</p>
+          </div>
+
+          {error && <div className="error-message">{error}</div>}
+
+          <div className="input-group">
+            <label>Username or Email</label>
+            <input 
+              type="text" 
+              placeholder="Enter your identifier"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="input-group">
+            <label>Password</label>
+            <input 
+              type="password" 
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="forgot-password">
+            <Link to="/forgot-password">Forgot password?</Link>
+          </div>
+
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? <div className="loader" /> : <><LogIn size={20} /> Login</>}
+          </button>
+
+          <p className="auth-footer">
+            Don't have an account? <Link to="/register">Sign Up</Link>
+          </p>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
+export default LoginPage;
