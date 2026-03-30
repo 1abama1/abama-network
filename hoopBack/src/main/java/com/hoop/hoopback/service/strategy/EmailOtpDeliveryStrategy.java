@@ -49,8 +49,13 @@ public class EmailOtpDeliveryStrategy implements OtpDeliveryStrategy {
     }
 
     private String generateHtmlTemplate(String username, String otpCode) {
-        return """
-                                <!DOCTYPE html>
+        // NOTE: Do NOT use String.formatted() or String.format() here.
+        // CSS properties like rgba(), radial-gradient() and percentage values
+        // contain '%' characters that would be misinterpreted as format specifiers,
+        // causing UnknownFormatConversionException at runtime.
+        // Use simple .replace() with named placeholders instead.
+        String template = """
+                <!DOCTYPE html>
                 <html>
                 <head>
                     <meta charset="UTF-8">
@@ -61,7 +66,7 @@ public class EmailOtpDeliveryStrategy implements OtpDeliveryStrategy {
                             color: #333;
                             margin: 0;
                             padding: 0;
-                            background-color: #1a1a1a; /* Темный фон как на трибунах */
+                            background-color: #1a1a1a;
                         }
                         .container {
                             max-width: 600px;
@@ -69,11 +74,10 @@ public class EmailOtpDeliveryStrategy implements OtpDeliveryStrategy {
                             background: #ffffff;
                             border-radius: 20px;
                             overflow: hidden;
-                            border: 4px solid #ff6b00; /* Оранжевая граница */
+                            border: 4px solid #ff6b00;
                             box-shadow: 0 15px 35px rgba(255,107,0,0.2);
                         }
                         .header {
-                            /* Градиент с текстурой баскетбольного мяча */
                             background: radial-gradient(circle at 2px 2px, #e65c00 1px, transparent 0) 0 0 / 4px 4px, #ff6b00;
                             color: #ffffff;
                             padding: 40px 20px;
@@ -90,8 +94,7 @@ public class EmailOtpDeliveryStrategy implements OtpDeliveryStrategy {
                         .content {
                             padding: 40px 30px;
                             text-align: center;
-                            background-image: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)),
-                                              url('https://www.transparenttextures.com/patterns/wood-pattern-with-soft-glow.png'); /* Легкая текстура паркета */
+                            background-image: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9));
                         }
                         .greeting {
                             font-size: 22px;
@@ -106,7 +109,6 @@ public class EmailOtpDeliveryStrategy implements OtpDeliveryStrategy {
                             margin-bottom: 30px;
                             font-family: 'Segoe UI', sans-serif;
                         }
-                        /* Стилизация под табло счета */
                         .otp-box {
                             background-color: #000;
                             border: 4px solid #333;
@@ -120,7 +122,7 @@ public class EmailOtpDeliveryStrategy implements OtpDeliveryStrategy {
                             font-size: 52px;
                             font-weight: bold;
                             letter-spacing: 12px;
-                            color: #ff6b00; /* Цвет горящих цифр на табло */
+                            color: #ff6b00;
                             margin: 0;
                             font-family: 'Courier New', Courier, monospace;
                             text-shadow: 0 0 10px #ff6b00;
@@ -131,7 +133,7 @@ public class EmailOtpDeliveryStrategy implements OtpDeliveryStrategy {
                             text-align: center;
                             font-size: 12px;
                             color: #777;
-                            border-top: 2px dashed #ff6b00; /* Линия как у края сетки */
+                            border-top: 2px dashed #ff6b00;
                         }
                         .court-line {
                             height: 4px;
@@ -160,13 +162,13 @@ public class EmailOtpDeliveryStrategy implements OtpDeliveryStrategy {
                             <h1>🏀 HoopConnect</h1>
                         </div>
                         <div class="content">
-                            <div class="greeting">Мяч в игре, %s!</div>
+                            <div class="greeting">Мяч в игре, {{USERNAME}}!</div>
                             <div class="message">
                                 Твой пропуск на площадку почти готов. Введи этот проверочный код, чтобы подтвердить вход в систему.
                             </div>
 
                             <div class="otp-box">
-                                <p class="otp-code">%s</p>
+                                <p class="otp-code">{{OTP_CODE}}</p>
                             </div>
 
                             <div class="court-line"></div>
@@ -182,7 +184,10 @@ public class EmailOtpDeliveryStrategy implements OtpDeliveryStrategy {
                     </div>
                 </body>
                 </html>
-                                """
-                .formatted(username, otpCode);
+                """;
+
+        return template
+                .replace("{{USERNAME}}", username)
+                .replace("{{OTP_CODE}}", otpCode);
     }
 }
