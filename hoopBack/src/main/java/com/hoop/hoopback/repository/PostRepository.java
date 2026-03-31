@@ -20,4 +20,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"author"})
     Page<Post> findAllByAuthorUsernameOrderByCreatedAtDesc(String username, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"author"})
+    @Query("SELECT p FROM Post p WHERE LOWER(p.content) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY p.createdAt DESC")
+    Page<Post> searchByContent(@org.springframework.data.repository.query.Param("q") String q, Pageable pageable);
 }

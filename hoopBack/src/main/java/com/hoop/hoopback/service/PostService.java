@@ -145,6 +145,12 @@ public class PostService {
                 .map(post -> mapToDto(post, currentUser));
     }
 
+    public Page<PostDto> searchPosts(String q, String currentUsername, Pageable pageable) {
+        User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        return postRepository.searchByContent(q, pageable)
+                .map(post -> mapToDto(post, currentUser));
+    }
+
     public List<CommentDto> getPostComments(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));

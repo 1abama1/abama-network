@@ -104,4 +104,16 @@ public class PostController {
                 authentication != null ? authentication.getName() : null,
                 pageable));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<PostDto>> searchPosts(
+            @RequestParam String q,
+            @PageableDefault(size = 20) Pageable pageable,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(postService.searchPosts(
+                q,
+                authentication != null ? authentication.getName() : null,
+                pageable));
+    }
 }
