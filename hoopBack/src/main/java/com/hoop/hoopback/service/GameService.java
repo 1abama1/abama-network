@@ -97,6 +97,13 @@ public class GameService {
         return mapToDto(game, currentUser);
     }
 
+    public List<GameDto> searchGames(String q, String currentUsername) {
+        User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        return gameRepository.findAllByTitleContainingIgnoreCaseOrLocationContainingIgnoreCaseOrderByDateTimeAsc(q, q).stream()
+                .map(game -> mapToDto(game, currentUser))
+                .collect(Collectors.toList());
+    }
+
     private GameDto mapToDto(Game game, User currentUser) {
         boolean isRegistered = currentUser != null && gameRegistrationRepository.existsByUserAndGame(currentUser, game);
         List<UserSummaryDto> players = game.getRegistrations().stream()

@@ -159,6 +159,13 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    public PostDto getPostById(Long postId, String currentUsername) {
+        User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));
+        return mapToDto(post, currentUser);
+    }
+
     private PostDto mapToDto(Post post, User currentUser) {
         boolean isLiked = currentUser != null && likeRepository.existsByUserAndPost(currentUser, post);
         boolean isReposted = currentUser != null && repostRepository.existsByUserAndOriginalPost(currentUser, post);

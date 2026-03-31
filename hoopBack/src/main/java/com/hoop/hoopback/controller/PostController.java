@@ -38,6 +38,16 @@ public class PostController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostDto> getPost(
+            @PathVariable Long postId,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(postService.getPostById(
+                postId,
+                authentication != null ? authentication.getName() : null));
+    }
+
     @PostMapping("/{postId}/like")
     public ResponseEntity<Void> likePost(@PathVariable Long postId, Authentication authentication) {
         postService.likePost(authentication.getName(), postId);

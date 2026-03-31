@@ -47,4 +47,14 @@ public class GameController {
     public ResponseEntity<GameDto> getGameDetails(@PathVariable Long gameId, Authentication authentication) {
         return ResponseEntity.ok(gameService.getGameDetails(gameId, authentication != null ? authentication.getName() : null));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<GameDto>> searchGames(
+            @RequestParam String q,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(gameService.searchGames(
+                q,
+                authentication != null ? authentication.getName() : null));
+    }
 }

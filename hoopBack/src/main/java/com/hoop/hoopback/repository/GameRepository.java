@@ -11,4 +11,5 @@ import java.util.List;
 public interface GameRepository extends JpaRepository<Game, Long> {
     List<Game> findAllByDateTimeBetweenOrderByDateTimeAsc(LocalDateTime start, LocalDateTime end);
     List<Game> findAllByDateTimeAfterOrderByDateTimeAsc(LocalDateTime now);
+    List<Game> findAllByTitleContainingIgnoreCaseOrLocationContainingIgnoreCaseOrderByDateTimeAsc(String title, String location);
 }

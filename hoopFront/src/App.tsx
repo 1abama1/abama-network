@@ -6,6 +6,7 @@ import RegisterPage from './pages/Auth/RegisterPage.tsx';
 import VerifyOtpPage from './pages/Auth/VerifyOtpPage';
 import HomeFeed from './pages/Feed/HomeFeed';
 import ExplorePage from './pages/Feed/ExplorePage.tsx';
+import PostDetailPage from './pages/Feed/PostDetailPage';
 import NotificationsPage from './pages/Notifications/NotificationsPage.tsx';
 import SchedulePage from './pages/Games/SchedulePage';
 import ProfilePage from './pages/Profile/ProfilePage';
@@ -51,6 +52,14 @@ function App() {
             element={
               <PrivateRoute>
                 <HomeFeed />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/post/:postId" 
+            element={
+              <PrivateRoute>
+                <PostDetailPage />
               </PrivateRoute>
             } 
           />

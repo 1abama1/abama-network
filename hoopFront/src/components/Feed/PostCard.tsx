@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Heart, MessageCircle, Repeat, Share, MoreHorizontal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
-import CommentModal from './CommentModal';
 import './Feed.css';
 
 interface PostProps {
@@ -25,11 +25,11 @@ interface PostProps {
     repostCaption?: string;
   };
   onUpdate: () => void;
+  onNavigateToPost?: (postId: number) => void;
 }
 
-const PostCard = ({ post, onUpdate }: PostProps) => {
-  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-  
+const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
+  const navigate = useNavigate();
   // Optimistic UI State
   const [localLiked, setLocalLiked] = useState(post.isLiked);
   const [localLikeCount, setLocalLikeCount] = useState(post.likesCount);
@@ -103,13 +103,25 @@ const PostCard = ({ post, onUpdate }: PostProps) => {
     }
   };
 
+  const targetPostId = post.originalPost ? post.originalPost.id : post.id;
+
+  const handleCardClick = () => {
+    if (onNavigateToPost) {
+      onNavigateToPost(targetPostId);
+    } else {
+      navigate(`/post/${targetPostId}`);
+    }
+  };
+
   return (
-    <motion.div 
-      className={`post-card ${post.originalPost ? 'is-repost' : ''}`}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      layout
-    >
+    <>
+      <motion.div 
+        className={`post-card ${post.originalPost ? 'is-repost' : ''}`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        layout
+        onClick={handleCardClick}
+      >
       {post.originalPost && (
         <div className="repost-indicator">
           <Repeat size={14} />
@@ -152,7 +164,7 @@ const PostCard = ({ post, onUpdate }: PostProps) => {
           <div className="post-interactions">
             <button 
               className="interaction-btn comment-btn"
-              onClick={(e) => { e.stopPropagation(); setIsCommentModalOpen(true); }}
+              onClick={handleCardClick}
             >
               <MessageCircle size={18} />
               <span>{post.originalPost ? post.originalPost.commentsCount : post.commentsCount}</span>
@@ -185,17 +197,8 @@ const PostCard = ({ post, onUpdate }: PostProps) => {
           </div>
         </div>
       </div>
-
-      <AnimatePresence>
-        {isCommentModalOpen && (
-          <CommentModal 
-            postId={String(post.originalPost ? post.originalPost.id : post.id)} 
-            onClose={() => setIsCommentModalOpen(false)}
-            onCommentAdded={onUpdate}
-          />
-        )}
-      </AnimatePresence>
-    </motion.div>
+      </motion.div>
+    </>
   );
 };
 
