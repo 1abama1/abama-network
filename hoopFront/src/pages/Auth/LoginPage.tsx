@@ -25,7 +25,15 @@ const LoginPage = () => {
       login(user, accessToken, refreshToken);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      const message = err.response?.data?.message || 'Login failed. Please check your credentials.';
+      setError(message);
+      
+      // If account is not verified, redirect to OTP page
+      if (message.includes('не подтвержден') || message.includes('not verified')) {
+        setTimeout(() => {
+          navigate('/verify-otp', { state: { identifier } });
+        }, 2000);
+      }
     } finally {
       setLoading(false);
     }

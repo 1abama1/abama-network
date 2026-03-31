@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import axiosInstance from '../api/axiosConfig.ts';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 interface User {
   id: string;

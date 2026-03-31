@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Image, MoreVertical, Search, MessageSquare } from 'lucide-react';
 import axiosInstance from '../../api/axiosConfig';
 import { useAuth } from '../../context/AuthContext';
-import { getWebSocketClient, disconnectWebSocket } from '../../api/websocket';
+import { getWebSocketClient } from '../../api/websocket';
 import './Messages.css';
 
 const ChatPage = () => {

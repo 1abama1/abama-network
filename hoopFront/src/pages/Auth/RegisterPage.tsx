@@ -32,8 +32,8 @@ const RegisterPage = () => {
         email: formData.email,
         password: formData.password
       });
-      // Redirect to OTP verification or login
-      navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+      // Redirect to OTP verification
+      navigate('/verify-otp', { state: { identifier: formData.email } });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Try again.');
     } finally {

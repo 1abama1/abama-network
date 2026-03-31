@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -13,6 +13,12 @@ const VerifyOtpPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const identifier = location.state?.identifier || '';
+
+  useEffect(() => {
+    if (!identifier) {
+      navigate('/register');
+    }
+  }, [identifier, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
