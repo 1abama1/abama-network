@@ -126,8 +126,8 @@ const ProfilePage = () => {
         </div>
 
         <div className="profile-names">
-          <h2>{profile?.displayName || profile?.username || 'Baller'}</h2>
-          <span className="profile-handle">@{profile?.username}</span>
+          <h2>{profile?.displayName || profile?.username || username || 'Baller'}</h2>
+          <span className="profile-handle">@{profile?.username || username}</span>
         </div>
 
         <p className="profile-bio">

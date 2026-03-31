@@ -25,7 +25,7 @@ const HomeFeed = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [posts.length]);
+  }, []);
 
   useEffect(() => {
     fetchPosts();

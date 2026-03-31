@@ -54,7 +54,7 @@ export class WebSocketClient {
 let wsInstance: WebSocketClient | null = null;
 
 export const getWebSocketClient = (): WebSocketClient | null => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (!token) return null;
 
     if (!wsInstance) {

@@ -38,7 +38,7 @@ public class AuthService {
         if (userRepository.existsByEmail(request.email())) {
             throw new UserAlreadyExistsException("Пользователь с таким email уже существует");
         }
-        if (userRepository.existsByUsername(request.username())) {
+        if (userRepository.existsByUsernameIgnoreCase(request.username())) {
             throw new UserAlreadyExistsException("Пользователь с таким именем уже существует");
         }
 
@@ -62,7 +62,7 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.identifier())
-                .orElseGet(() -> userRepository.findByUsername(request.identifier())
+                .orElseGet(() -> userRepository.findByUsernameIgnoreCase(request.identifier())
                         .orElseThrow(() -> new InvalidCredentialsException("Неверные учетные данные")));
 
         if (!user.isEnabled()) {
@@ -84,7 +84,7 @@ public class AuthService {
                         user.getUsername(),
                         user.getPositions(),
                         user.getHeight(),
-                        user.getFollowers().size()
+                        user.getFollowersCount() != null ? user.getFollowersCount() : 0L
                 ))
                 .build();
     }
@@ -122,7 +122,7 @@ public class AuthService {
         
         // После успешной верификации
         User user = userRepository.findByEmail(request.identifier())
-                .orElseGet(() -> userRepository.findByUsername(request.identifier())
+                .orElseGet(() -> userRepository.findByUsernameIgnoreCase(request.identifier())
                         .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден")));
         
         user.setPassword(passwordEncoder.encode(request.newPassword()));
@@ -151,7 +151,7 @@ public class AuthService {
 
         if (identifier != null) {
             var userDetails = userRepository.findByEmail(identifier)
-                    .orElseGet(() -> userRepository.findByUsername(identifier)
+                    .orElseGet(() -> userRepository.findByUsernameIgnoreCase(identifier)
                     .orElseThrow(() -> new TokenRefreshException("Пользователь не найден")));
 
             if (jwtService.isTokenValid(refreshToken, userDetails)) {
@@ -164,7 +164,7 @@ public class AuthService {
                                 userDetails.getUsername(),
                                 userDetails.getPositions(),
                                 userDetails.getHeight(),
-                                userDetails.getFollowers().size()
+                                userDetails.getFollowersCount() != null ? userDetails.getFollowersCount() : 0L
                         ))
                         .build();
             }
@@ -174,7 +174,7 @@ public class AuthService {
 
     @Transactional
     public MessageResponse changePassword(String currentUsername, PasswordResetRequest request) {
-        User user = userRepository.findByUsername(currentUsername)
+        User user = userRepository.findByUsernameIgnoreCase(currentUsername)
                 .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));

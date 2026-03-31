@@ -1,6 +1,7 @@
 package com.hoop.hoopback.security;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import com.hoop.hoopback.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(
@@ -40,7 +42,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
+        
         try {
+            String jti = jwtService.extractJti(jwt);
+            if (tokenBlacklistService.isBlacklisted(jti)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             identifier = jwtService.extractUsername(jwt);
             
             if (identifier != null && SecurityContextHolder.getContext().getAuthentication() == null) {

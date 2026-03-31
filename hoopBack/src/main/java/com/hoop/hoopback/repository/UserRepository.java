@@ -9,15 +9,24 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
-    Optional<User> findByUsername(String username);
+    Optional<User> findByUsernameIgnoreCase(String username);
+    
+    default Optional<User> findByUsername(String username) {
+        return findByUsernameIgnoreCase(username);
+    }
+    
     boolean existsByEmail(String email);
-    boolean existsByUsername(String username);
+    boolean existsByUsernameIgnoreCase(String username);
+    
+    default boolean existsByUsername(String username) {
+        return existsByUsernameIgnoreCase(username);
+    }
     List<User> findByUsernameContainingIgnoreCase(String username);
 
-    @Query("SELECT u.followers FROM User u WHERE u.username = :username")
+    @Query("SELECT u.followers FROM User u WHERE LOWER(u.username) = LOWER(:username)")
     List<User> findFollowersByUsername(String username);
 
-    @Query("SELECT u.following FROM User u WHERE u.username = :username")
+    @Query("SELECT u.following FROM User u WHERE LOWER(u.username) = LOWER(:username)")
     List<User> findFollowingByUsername(String username);
 
     @Query("SELECT COUNT(f) FROM User u JOIN u.followers f WHERE u.id = :userId")

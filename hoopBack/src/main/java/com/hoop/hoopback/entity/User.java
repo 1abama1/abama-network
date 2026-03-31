@@ -67,6 +67,9 @@ public class User implements UserDetails {
     @Builder.Default
     private Set<User> following = new HashSet<>();
 
+    @org.hibernate.annotations.Formula("(SELECT count(1) FROM user_followers uf WHERE uf.user_id = id)")
+    private Integer followersCount;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));

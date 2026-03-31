@@ -213,7 +213,7 @@ public class PostService {
                 user.getUsername(),
                 user.getPositions(),
                 user.getHeight(),
-                userRepository.countFollowersByUserId(user.getId())
+                user.getFollowersCount() != null ? user.getFollowersCount() : 0L
         );
     }
 }

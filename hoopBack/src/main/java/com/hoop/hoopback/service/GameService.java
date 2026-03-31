@@ -11,6 +11,8 @@ import com.hoop.hoopback.repository.GameRegistrationRepository;
 import com.hoop.hoopback.repository.GameRepository;
 import com.hoop.hoopback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class GameService {
     private final UserRepository userRepository;
 
     @Transactional
+    @CacheEvict(value = "games", allEntries = true)
     public GameDto createGame(String username, CreateGameRequest request) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
@@ -45,6 +48,7 @@ public class GameService {
     }
 
     @Transactional
+    @CacheEvict(value = "games", allEntries = true)
     public void registerForGame(String username, Long gameId) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
@@ -78,6 +82,7 @@ public class GameService {
                 .ifPresent(gameRegistrationRepository::delete);
     }
 
+    @Cacheable(value = "games", key = "'upcoming:' + #currentUsername")
     public List<GameDto> getUpcomingGames(String currentUsername) {
         User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
         return gameRepository.findAllByDateTimeAfterOrderByDateTimeAsc(LocalDateTime.now()).stream()

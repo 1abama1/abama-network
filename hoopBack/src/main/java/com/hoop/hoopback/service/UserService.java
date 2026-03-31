@@ -10,6 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,19 +23,21 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    @Cacheable(value = "profiles", key = "#username?.toLowerCase() + ':' + #currentUsername?.toLowerCase()")
     public UserDto getProfile(String username, String currentUsername) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
         
         User currentUser = currentUsername != null ? 
-            userRepository.findByUsername(currentUsername).orElse(null) : null;
+            userRepository.findByUsernameIgnoreCase(currentUsername).orElse(null) : null;
             
         return mapToDto(user, currentUser);
     }
 
     @Transactional
+    @CacheEvict(value = "profiles", key = "#username?.toLowerCase() + ':*'", allEntries = true)
     public UserDto updateProfile(String username, UpdateProfileRequest request) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
 
         user.setBio(request.bio());
@@ -44,14 +50,17 @@ public class UserService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "profiles", allEntries = true)
+    })
     public void follow(String followerUsername, String targetUsername) {
         if (followerUsername.equals(targetUsername)) {
             throw new IllegalArgumentException("Вы не можете подписаться на самого себя");
         }
 
-        User follower = userRepository.findByUsername(followerUsername)
+        User follower = userRepository.findByUsernameIgnoreCase(followerUsername)
                 .orElseThrow(() -> new InvalidCredentialsException("Текущий пользователь не найден"));
-        User target = userRepository.findByUsername(targetUsername)
+        User target = userRepository.findByUsernameIgnoreCase(targetUsername)
                 .orElseThrow(() -> new InvalidCredentialsException("Целевой пользователь не найден"));
 
         target.getFollowers().add(follower);
@@ -59,10 +68,13 @@ public class UserService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "profiles", allEntries = true)
+    })
     public void unfollow(String followerUsername, String targetUsername) {
-        User follower = userRepository.findByUsername(followerUsername)
+        User follower = userRepository.findByUsernameIgnoreCase(followerUsername)
                 .orElseThrow(() -> new InvalidCredentialsException("Текущий пользователь не найден"));
-        User target = userRepository.findByUsername(targetUsername)
+        User target = userRepository.findByUsernameIgnoreCase(targetUsername)
                 .orElseThrow(() -> new InvalidCredentialsException("Целевой пользователь не найден"));
 
         target.getFollowers().remove(follower);
