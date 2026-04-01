@@ -77,10 +77,10 @@ hoopFront/dist/
 hoopFront/.vite/
 hoopFront/coverage/
 
-# Переменные окружения
-hoopFront/.env
-hoopFront/.env.local
-hoopFront/.env.*.local
+# Environment Variables
+.env
+.env.local
+.env.*.local
 
 # TypeScript build info
 *.tsbuildinfo
