@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn, Trophy } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axiosInstance from '../../api/axiosConfig';
 import './Auth.css';
 
 const LoginPage = () => {
-  const [identifier, setIdentifier] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const [identifier, setIdentifier] = useState(location.state?.identifier || '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(location.state?.message || '');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +30,7 @@ const LoginPage = () => {
     } catch (err: any) {
       const message = err.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(message);
-      
+
       // If account is not verified, redirect to OTP page
       if (message.includes('не подтвержден') || message.includes('not verified')) {
         setTimeout(() => {
@@ -42,7 +45,7 @@ const LoginPage = () => {
   return (
     <div className="auth-container">
       <div className="auth-visual">
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
@@ -53,8 +56,8 @@ const LoginPage = () => {
           <p>Where the game never stops.</p>
         </motion.div>
       </div>
-      
-      <motion.div 
+
+      <motion.div
         initial={{ x: 50, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.6 }}
@@ -67,11 +70,20 @@ const LoginPage = () => {
           </div>
 
           {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message" style={{
+            padding: '1rem',
+            background: 'rgba(0, 255, 128, 0.1)',
+            border: '1px solid rgba(0, 255, 128, 0.2)',
+            borderRadius: 'var(--radius-md)',
+            color: '#00ff80',
+            fontSize: '0.9rem',
+            marginBottom: '1rem'
+          }}>{success}</div>}
 
           <div className="input-group">
             <label>Username or Email</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Enter your identifier"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
@@ -81,8 +93,8 @@ const LoginPage = () => {
 
           <div className="input-group">
             <label>Password</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

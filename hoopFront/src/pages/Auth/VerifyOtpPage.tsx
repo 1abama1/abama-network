@@ -10,6 +10,7 @@ const VerifyOtpPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [attempts, setAttempts] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const identifier = location.state?.identifier || '';
@@ -31,9 +32,24 @@ const VerifyOtpPage = () => {
     setError('');
     try {
       await axiosInstance.post('/auth/verify-otp', { identifier, code });
-      navigate('/login', { state: { message: 'Verification successful! You can now login.' } });
+      navigate('/login', {
+        state: {
+          message: 'Verification successful! You can now login.',
+          identifier: identifier
+        }
+      });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Verification failed. Incorrect code.');
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+
+      if (newAttempts >= 5) {
+        setError('Too many failed attempts. Security lock triggered. Redirecting to login...');
+        setTimeout(() => {
+          navigate('/login');
+        }, 2500);
+      } else {
+        setError(`${err.response?.data?.message || 'Incorrect code.'} ${5 - newAttempts} attempts remaining.`);
+      }
     } finally {
       setLoading(false);
     }
@@ -53,7 +69,7 @@ const VerifyOtpPage = () => {
   return (
     <div className="auth-container">
       <div className="auth-visual">
-         <motion.div 
+        <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.8 }}
@@ -65,7 +81,7 @@ const VerifyOtpPage = () => {
         </motion.div>
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ x: 50, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         className="auth-form-wrapper glass"
@@ -80,8 +96,8 @@ const VerifyOtpPage = () => {
 
           <div className="input-group">
             <label>Verification Code</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="123456"
               maxLength={6}
               value={code}
@@ -96,10 +112,10 @@ const VerifyOtpPage = () => {
           </button>
 
           <div className="auth-footer">
-            Didn't receive a code? 
-            <button 
-              type="button" 
-              onClick={handleResend} 
+            Didn't receive a code?
+            <button
+              type="button"
+              onClick={handleResend}
               disabled={resending}
               style={{ color: 'var(--primary)', fontWeight: '600', marginLeft: '5px' }}
             >

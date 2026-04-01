@@ -8,8 +8,8 @@
 
 .auth-visual {
   flex: 1.2;
-  background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(255, 107, 0, 0.2)),
-              url('https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=2090') no-repeat center center;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(255, 107, 0, 0.2)),
+    url('https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=2090') no-repeat center center;
   background-size: cover;
   display: flex;
   align-items: center;
@@ -25,7 +25,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.6) 80%);
+  background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.6) 80%);
 }
 
 .visual-content {
@@ -86,20 +86,35 @@
 }
 
 .input-group label {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 500;
   color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-row {
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
 }
 
 .forgot-password {
   text-align: right;
   font-size: 0.85rem;
-  color: var(--primary);
-  margin-top: -1rem;
+  margin-top: -0.75rem;
 }
 
-.forgot-password:hover {
-  text-decoration: underline;
+.forgot-password a {
+  color: #555;
+  /* More subtle gray */
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.forgot-password a:hover {
+  color: var(--primary);
+  text-decoration: none;
 }
 
 .error-message {
@@ -138,15 +153,51 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 968px) {
   .auth-visual {
     display: none;
   }
-  
+
   .auth-form-wrapper {
     border-left: none;
   }
+}
+
+.premium-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.premium-back-link:hover {
+  color: var(--primary);
+  transform: translateX(-3px);
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon svg {
+  position: absolute;
+  left: 1rem;
+  color: var(--primary);
+  opacity: 0.6;
+}
+
+.input-with-icon input {
+  padding-left: 3rem !important;
 }

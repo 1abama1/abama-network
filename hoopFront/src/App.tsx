@@ -10,6 +10,7 @@ import PostDetailPage from './pages/Feed/PostDetailPage';
 import NotificationsPage from './pages/Notifications/NotificationsPage.tsx';
 import SchedulePage from './pages/Games/SchedulePage';
 import GameDetailsPage from './pages/Games/GameDetailsPage';
+import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import ChatPage from './pages/Messages/ChatPage';
 import Layout from './components/Layout/Layout';
@@ -46,6 +47,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
           {/* Private Routes */}
           <Route

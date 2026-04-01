@@ -196,13 +196,25 @@ const GameDetailsPage = () => {
                 {/* SIDEBAR */}
                 <aside className="premium-sidebar">
                     <div className="glass-card sidebar-widget">
-                        <h3>Location Intel</h3>
+                        <div className="section-title">
+                            <MapPin size={18} className="text-primary" />
+                            <h3>Location Intel</h3>
+                        </div>
                         <div className="location-visual">
                             <div className="v-map">
+                                <div className="radar-sweep" />
                                 <MapPin size={40} className="pulse-icon" />
                             </div>
                             <p>{game.location}</p>
                             <small>Outdoor Full Court</small>
+
+                            <button
+                                className="directions-btn"
+                                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(game.location)}`, '_blank')}
+                            >
+                                <Zap size={16} fill="currentColor" />
+                                GET DIRECTIONS
+                            </button>
                         </div>
                     </div>
                 </aside>
