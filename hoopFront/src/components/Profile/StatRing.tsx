@@ -18,24 +18,25 @@ const StatRing = ({ label, value, unit, percent, color = 'var(--primary)' }: Sta
     <div className="stat-ring-container">
       <div className="ring-wrapper">
         <svg width="80" height="80" viewBox="0 0 100 100">
-          <circle 
-            className="ring-bg" 
-            cx="50" cy="50" r={radius} 
-            fill="transparent" 
-            stroke="rgba(255, 255, 255, 0.05)" 
+          <circle
+            className="ring-bg"
+            cx="50" cy="50" r={radius}
+            fill="transparent"
+            stroke="rgba(255, 255, 255, 0.05)"
             strokeWidth="8"
           />
-          <motion.circle 
-            className="ring-progress" 
-            cx="50" cy="50" r={radius} 
-            fill="transparent" 
-            stroke={color} 
+          <motion.circle
+            className="ring-progress"
+            cx="50" cy="50" r={radius}
+            fill="transparent"
+            stroke={color}
             strokeWidth="8"
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 1, ease: 'easeOut' }}
+            transition={{ duration: 1.5, ease: 'easeOut' }}
             strokeLinecap="round"
+            style={{ filter: `drop-shadow(0 0 5px ${color})` }}
           />
         </svg>
         <div className="ring-value">

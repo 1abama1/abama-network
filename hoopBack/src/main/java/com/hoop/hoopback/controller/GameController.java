@@ -21,9 +21,14 @@ public class GameController {
     @PostMapping
     public ResponseEntity<GameDto> createGame(
             @Valid @RequestBody CreateGameRequest request,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         return ResponseEntity.ok(gameService.createGame(authentication.getName(), request));
+    }
+
+    @GetMapping("/trending")
+    public ResponseEntity<List<GameDto>> getTrendingGames(Authentication authentication) {
+        return ResponseEntity
+                .ok(gameService.getTrendingGames(authentication != null ? authentication.getName() : null));
     }
 
     @PostMapping("/{gameId}/register")
@@ -40,19 +45,20 @@ public class GameController {
 
     @GetMapping("/upcoming")
     public ResponseEntity<List<GameDto>> getUpcomingGames(Authentication authentication) {
-        return ResponseEntity.ok(gameService.getUpcomingGames(authentication != null ? authentication.getName() : null));
+        return ResponseEntity
+                .ok(gameService.getUpcomingGames(authentication != null ? authentication.getName() : null));
     }
 
     @GetMapping("/{gameId}")
     public ResponseEntity<GameDto> getGameDetails(@PathVariable Long gameId, Authentication authentication) {
-        return ResponseEntity.ok(gameService.getGameDetails(gameId, authentication != null ? authentication.getName() : null));
+        return ResponseEntity
+                .ok(gameService.getGameDetails(gameId, authentication != null ? authentication.getName() : null));
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<GameDto>> searchGames(
             @RequestParam String q,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         return ResponseEntity.ok(gameService.searchGames(
                 q,
                 authentication != null ? authentication.getName() : null));

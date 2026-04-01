@@ -14,18 +14,12 @@ import java.util.Optional;
 
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
-    /** Cursor-based pagination: берём сообщения старше курсора (before) */
-    @Query("""
-                SELECT m FROM Message m
-                WHERE m.conversation = :conv
-                  AND m.deletedAt IS NULL
-                  AND (:before IS NULL OR m.sentAt < :before)
-                ORDER BY m.sentAt DESC
-            """)
-    List<Message> findByConversationBefore(
-            @Param("conv") Conversation conv,
-            @Param("before") Instant before,
-            Pageable pageable);
+    /** Сообщения в диалоге (самые новые) */
+    List<Message> findTop50ByConversationAndDeletedAtIsNullOrderBySentAtDesc(Conversation conv, Pageable pageable);
+
+    /** Сообщения в диалоге старше курсора */
+    List<Message> findTop50ByConversationAndDeletedAtIsNullAndSentAtBeforeOrderBySentAtDesc(
+            Conversation conv, Instant before, Pageable pageable);
 
     /** Последнее сообщение в диалоге (для превью) */
     @Query("""

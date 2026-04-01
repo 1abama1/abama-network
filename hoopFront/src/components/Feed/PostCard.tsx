@@ -79,6 +79,10 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
   const handleRepost = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isSyncing) return;
+    if (localReposted) {
+      alert("You have already reposted this.");
+      return;
+    }
 
     const confirmRepost = window.confirm("Do you want to repost this to your feed?");
     if (!confirmRepost) return;

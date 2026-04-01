@@ -34,21 +34,163 @@
   border-radius: var(--radius-lg);
 }
 
-.trending-games, .who-to-follow {
-  padding: 1.5rem;
+.trending-games,
+.who-to-follow,
+.sidebar-section {
+  padding: 1.25rem;
   border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.trending-games h3, .who-to-follow h3 {
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+/* Trending Games Items */
+.trending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.trending-item {
+  padding: 0.85rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s var(--transition-main);
+  border: 1px solid transparent;
+}
+
+.trending-item:hover {
+  background: rgba(255, 107, 0, 0.05);
+  border-color: rgba(255, 107, 0, 0.2);
+  transform: translateX(4px);
+}
+
+.trending-item .item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.item-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-bright);
+}
+
+.item-meta {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.item-chevron {
+  color: var(--primary);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.trending-item:hover .item-chevron {
+  opacity: 1;
+}
+
+/* Who to Follow Items */
+.follow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.follow-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  transition: background 0.3s;
+}
+
+.follow-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.baller-avatar-small {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #222, #000);
+  border: 1px solid rgba(255, 107, 0, 0.3);
+  border-radius: 12px;
+  /* Squircle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: var(--primary);
+  font-size: 1.1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.follow-item .item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.baller-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-bright);
+}
+
+.baller-handle {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.follow-small-btn {
+  background: #000;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 0.5rem;
+  border-radius: 10px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.follow-small-btn:hover {
+  background: var(--primary);
+  color: #000;
+  box-shadow: 0 0 15px rgba(255, 107, 0, 0.4);
 }
 
 .empty-state {
   color: var(--text-dim);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-align: center;
-  padding: 1rem;
+  padding: 1.5rem;
+  font-style: italic;
+  opacity: 0.7;
 }
 
 @media (max-width: 1200px) {
@@ -66,6 +208,7 @@
 @media (max-width: 768px) {
   .layout-container {
     flex-direction: column;
-    padding-bottom: 70px; /* Space for bottom nav on mobile if implemented */
+    padding-bottom: 70px;
+    /* Space for bottom nav on mobile if implemented */
   }
 }

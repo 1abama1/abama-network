@@ -54,7 +54,7 @@
   box-shadow: 0 0 10px rgba(255, 107, 0, 0.1);
 }
 
-.sidebar-search input:focus + svg {
+.sidebar-search input:focus+svg {
   color: var(--primary);
 }
 
@@ -70,7 +70,26 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   z-index: 1100;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Base Styles & Utility Classes */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  outline: none;
 }
 
 .search-result-item {
@@ -94,15 +113,17 @@
 .avatar-mini {
   width: 32px;
   height: 32px;
-  background: var(--primary-gradient);
-  border-radius: 50%;
+  background: linear-gradient(145deg, #1e1e1e, #121212);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000;
+  color: var(--primary);
   font-weight: 700;
   font-size: 0.85rem;
   flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .result-info {
@@ -152,24 +173,29 @@
   font-size: 1.1rem;
 }
 
-.nav-item i, .nav-item svg {
+.nav-item i,
+.nav-item svg {
   transition: transform 0.2s ease;
 }
 
 .nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.03);
   color: var(--text);
+  transform: translateX(5px);
 }
 
 .nav-item:hover svg {
   transform: scale(1.1);
   color: var(--primary);
+  filter: drop-shadow(0 0 5px rgba(255, 107, 0, 0.5));
 }
 
 .nav-item.active {
-  background-color: rgba(255, 107, 0, 0.1);
+  background: linear-gradient(90deg, rgba(255, 107, 0, 0.12), transparent);
+  border-left: 3px solid var(--primary);
   color: var(--primary);
   font-weight: 700;
+  box-shadow: inset 0 0 15px rgba(255, 107, 0, 0.05);
 }
 
 .sidebar-footer {
@@ -189,16 +215,18 @@
 }
 
 .avatar-placeholder {
-  width: 40px;
-  height: 40px;
-  background: var(--primary);
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(145deg, #1e1e1e, #121212);
+  border: 1px solid rgba(255, 107, 0, 0.3);
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000;
-  font-weight: 700;
-  font-size: 1.2rem;
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 1.3rem;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
 .user-info {
@@ -220,15 +248,61 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.8rem 1rem;
+  padding: 0.9rem 1.25rem;
+  background: #0A0A0A;
   color: #ff4d4d;
   width: 100%;
   border-radius: var(--radius-md);
-  transition: background 0.2s ease;
+  border: 1px solid rgba(255, 77, 77, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.logout-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 77, 77, 0.1),
+      transparent);
+  transition: 0.5s;
 }
 
 .logout-btn:hover {
-  background: rgba(255, 77, 77, 0.1);
+  background: #110505;
+  border-color: #ff4d4d;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(255, 77, 77, 0.2);
+  transform: translateY(-2px);
+}
+
+.logout-btn:hover::before {
+  left: 100%;
+}
+
+.nav-unread-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--primary);
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 900;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 15px rgba(255, 107, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 5;
 }
 
 @media (max-width: 1200px) {
@@ -236,16 +310,19 @@
     width: 80px;
     padding: 1.5rem 1rem;
   }
-  
-  .logo-text, .nav-item span, .user-info, .sidebar-footer button span {
+
+  .logo-text,
+  .nav-item span,
+  .user-info,
+  .sidebar-footer button span {
     display: none;
   }
-  
+
   .sidebar-header {
     justify-content: center;
     padding-left: 0;
   }
-  
+
   .nav-item {
     justify-content: center;
   }

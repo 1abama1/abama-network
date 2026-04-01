@@ -17,6 +17,7 @@ import org.springframework.cache.annotation.Caching;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -102,6 +103,16 @@ public class UserService {
     public List<UserSummaryDto> searchUsers(String query) {
         return userRepository.findByUsernameContainingIgnoreCase(query).stream()
                 .limit(10)
+                .map(this::mapToSummaryDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<UserSummaryDto> getRecommendedUsers(String currentUsername) {
+        User currentUser = currentUsername != null
+                ? userRepository.findByUsernameIgnoreCase(currentUsername).orElse(null)
+                : null;
+        Long currentUserId = currentUser != null ? currentUser.getId() : -1L;
+        return userRepository.findRecommendedUsers(currentUserId, PageRequest.of(0, 3)).stream()
                 .map(this::mapToSummaryDto)
                 .collect(Collectors.toList());
     }

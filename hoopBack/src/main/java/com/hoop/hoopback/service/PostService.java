@@ -115,10 +115,9 @@ public class PostService {
                 Post originalPost = postRepository.findById(postId)
                                 .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));
 
-                // If it's a standard repost (no caption), we might want to check if already
-                // reposted
-                // But Twitter allows multiple quote-reposts and undoing a standard repost.
-                // For simplicity, let's allow multiple.
+                if (repostRepository.existsByUserAndOriginalPost(user, originalPost)) {
+                        throw new IllegalStateException("Вы уже репостнули этот пост");
+                }
 
                 Repost repost = Repost.builder()
                                 .user(user)

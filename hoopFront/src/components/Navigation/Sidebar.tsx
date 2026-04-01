@@ -99,22 +99,7 @@ const Sidebar = () => {
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Bell size={24} />
             {unreadCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: -8,
-                right: -8,
-                background: 'var(--primary)',
-                color: '#000',
-                fontSize: '0.65rem',
-                fontWeight: 800,
-                width: 18,
-                height: 18,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 10px var(--primary)'
-              }}>
+              <span className="nav-unread-badge">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}

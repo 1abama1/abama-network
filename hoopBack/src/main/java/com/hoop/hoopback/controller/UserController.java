@@ -21,14 +21,14 @@ public class UserController {
 
     @GetMapping("/profile/{username}")
     public ResponseEntity<UserDto> getProfile(@PathVariable String username, Authentication authentication) {
-        return ResponseEntity.ok(userService.getProfile(username, authentication != null ? authentication.getName() : null));
+        return ResponseEntity
+                .ok(userService.getProfile(username, authentication != null ? authentication.getName() : null));
     }
 
     @PutMapping("/profile")
     public ResponseEntity<UserDto> updateProfile(
             @Valid @RequestBody UpdateProfileRequest request,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         return ResponseEntity.ok(userService.updateProfile(authentication.getName(), request));
     }
 
@@ -57,5 +57,11 @@ public class UserController {
     @GetMapping("/search")
     public ResponseEntity<List<UserSummaryDto>> searchUsers(@RequestParam String q) {
         return ResponseEntity.ok(userService.searchUsers(q));
+    }
+
+    @GetMapping("/recommended")
+    public ResponseEntity<List<UserSummaryDto>> getRecommendedUsers(Authentication authentication) {
+        return ResponseEntity
+                .ok(userService.getRecommendedUsers(authentication != null ? authentication.getName() : null));
     }
 }

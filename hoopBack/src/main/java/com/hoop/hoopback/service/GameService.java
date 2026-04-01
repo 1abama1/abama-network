@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -114,6 +115,14 @@ public class GameService {
                                 .findAllByTitleContainingIgnoreCaseOrLocationContainingIgnoreCaseOrderByDateTimeAsc(q,
                                                 q)
                                 .stream()
+                                .map(game -> mapToDto(game, currentUser))
+                                .collect(Collectors.toList());
+        }
+
+        public List<GameDto> getTrendingGames(String currentUsername) {
+                User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
+                                : null;
+                return gameRepository.findTrendingGames(LocalDateTime.now(), PageRequest.of(0, 3)).stream()
                                 .map(game -> mapToDto(game, currentUser))
                                 .collect(Collectors.toList());
         }

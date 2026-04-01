@@ -32,6 +32,7 @@ interface MessengerActions {
     updateTyping: (evt: TypingEvent) => void;
     setLoading: (v: boolean) => void;
     setError: (msg: string | null) => void;
+    addConversation: (conv: Conversation) => void;
 }
 
 export const useMessengerStore = create<MessengerState & MessengerActions>()(
@@ -153,5 +154,14 @@ export const useMessengerStore = create<MessengerState & MessengerActions>()(
 
         setLoading: (v: boolean) => set((s: MessengerState) => { s.loading = v; }),
         setError: (m: string | null) => set((s: MessengerState) => { s.error = m; }),
+        addConversation: (conv: Conversation) =>
+            set((s: MessengerState) => {
+                const idx = s.conversations.findIndex((c: Conversation) => c.id === conv.id);
+                if (idx !== -1) {
+                    s.conversations[idx] = { ...s.conversations[idx], ...conv };
+                } else {
+                    s.conversations.unshift(conv);
+                }
+            }),
     }))
-);
+)

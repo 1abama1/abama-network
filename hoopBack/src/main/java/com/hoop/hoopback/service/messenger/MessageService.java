@@ -65,8 +65,19 @@ public class MessageService {
         Conversation conv = findConversation(conversationId, me);
         int safeLimit = Math.min(limit, 50);
 
-        List<Message> msgs = messageRepo.findByConversationBefore(
-                conv, before, PageRequest.of(0, safeLimit));
+        log.debug("Fetching messages for conv={}, user={}, before={}, limit={}", conversationId, username, before,
+                safeLimit);
+
+        List<Message> msgs;
+        if (before == null) {
+            msgs = messageRepo.findTop50ByConversationAndDeletedAtIsNullOrderBySentAtDesc(
+                    conv, PageRequest.of(0, safeLimit));
+        } else {
+            msgs = messageRepo.findTop50ByConversationAndDeletedAtIsNullAndSentAtBeforeOrderBySentAtDesc(
+                    conv, before, PageRequest.of(0, safeLimit));
+        }
+
+        log.debug("Found {} messages in DB", msgs.size());
 
         return msgs.stream()
                 .map(MessageDto::fromEntity)

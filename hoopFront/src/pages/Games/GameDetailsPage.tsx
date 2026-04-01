@@ -1,15 +1,17 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     MapPin,
     Users,
     Clock,
     ChevronLeft,
-    User,
+    User as UserIcon,
     Calendar,
     ShieldCheck,
-    Zap
+    Zap,
+    Share2,
+    Info
 } from 'lucide-react';
 import { format } from 'date-fns';
 import axiosInstance from '../../api/axiosConfig';
@@ -41,7 +43,6 @@ const GameDetailsPage = () => {
         if (!game) return;
         const wasRegistered = game.isRegistered;
 
-        // OPTIMISTIC UPDATE
         setGame({
             ...game,
             isRegistered: !wasRegistered,
@@ -56,137 +57,152 @@ const GameDetailsPage = () => {
             }
             fetchGameDetails();
         } catch (error) {
-            fetchGameDetails(); // Rollback by refetching
+            fetchGameDetails();
             console.error('Registration failed', error);
-            alert("Failed to update registration. Please try again.");
         }
     };
 
     if (loading) {
         return (
-            <div className="feed-loading">
-                <div className="basketball-spinner" />
-                <p>Loading game intel...</p>
+            <div className="flex-center" style={{ minHeight: '80vh' }}>
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                    className="basketball-spinner"
+                />
             </div>
         );
     }
 
-    if (!game) {
-        return (
-            <div className="error-state">
-                <h2>Game not found</h2>
-                <button className="btn-primary" onClick={() => navigate('/schedule')}>
-                    Back to Schedule
-                </button>
-            </div>
-        );
-    }
+    if (!game) return <div className="error-state">Game not found</div>;
 
     const gameDate = new Date(game.dateTime);
     const isFull = game.playersCount >= game.maxPlayers;
 
     return (
         <motion.div
-            className="game-details-page"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            className="game-details-premium page-transition"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
         >
-            <div className="details-header">
-                <button className="back-button" onClick={() => navigate(-1)}>
-                    <ChevronLeft size={24} />
+            {/* HERO SECTION */}
+            <div className="game-hero">
+                <div className="hero-overlay" />
+                <button className="premium-back" onClick={() => navigate(-1)}>
+                    <ChevronLeft size={20} />
                 </button>
-                <div className="header-content">
-                    <div className="title-section">
-                        <h1 className="game-title">{game.title}</h1>
-                        <div className="game-meta">
-                            <span className="creator-tag">
-                                <User size={16} /> Hosted by @{game.creator.username}
-                            </span>
-                            <span className="meta-divider">•</span>
-                            <span className="location-tag">
-                                <MapPin size={16} /> {game.location}
-                            </span>
+
+                <div className="hero-content">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="hero-badge"
+                    >
+                        <Zap size={14} fill="currentColor" />
+                        LIVE RUN
+                    </motion.div>
+
+                    <h1 className="hero-title text-gradient">{game.title}</h1>
+
+                    <div className="hero-meta">
+                        <div className="meta-item">
+                            <MapPin size={18} className="text-primary" />
+                            <span>{game.location}</span>
+                        </div>
+                        <div className="meta-item">
+                            <UserIcon size={18} className="text-primary" />
+                            <span>Hosted by <span className="text-glow">@{game.creator.username}</span></span>
                         </div>
                     </div>
+                </div>
+
+                <div className="hero-actions">
+                    <button className="action-circle-btn"><Share2 size={20} /></button>
                     <button
-                        className={`btn-primary register-btn ${game.isRegistered ? 'btn-outline' : ''}`}
+                        className={`btn-primary hero-main-btn ${game.isRegistered ? 'registered' : ''}`}
                         disabled={isFull && !game.isRegistered}
                         onClick={handleRegister}
                     >
-                        {game.isRegistered ? 'Leave Game' : isFull ? 'Game Full' : 'Join Run'}
-                        <Zap size={18} fill={game.isRegistered ? 'none' : 'currentColor'} />
+                        {game.isRegistered ? 'UNREGISTER' : isFull ? 'SQUAD FULL' : 'JOIN THE RUN'}
+                        {!game.isRegistered && !isFull && <Zap size={18} fill="currentColor" />}
                     </button>
                 </div>
             </div>
 
-            <div className="details-grid">
-                <div className="details-main">
-                    <section className="info-card glass">
-                        <h3><Zap size={20} className="icon-primary" /> About this Game</h3>
-                        <p className="description-text">{game.description}</p>
+            <div className="premium-grid container-premium">
+                {/* MAIN CONTENT */}
+                <div className="premium-main">
+                    <section className="glass-card detail-section">
+                        <div className="section-title">
+                            <Info size={20} className="text-primary" />
+                            <h3>Intel & Details</h3>
+                        </div>
+                        <p className="premium-desc">{game.description}</p>
 
-                        <div className="info-stats">
-                            <div className="info-stat">
-                                <Calendar size={20} />
-                                <div className="stat-label">Date</div>
-                                <div className="stat-value">{format(gameDate, 'EEEE, MMMM do')}</div>
+                        <div className="stats-row">
+                            <div className="stat-card">
+                                <Calendar size={24} />
+                                <div>
+                                    <label>Date</label>
+                                    <span>{format(gameDate, 'EEEE, MMM do')}</span>
+                                </div>
                             </div>
-                            <div className="info-stat">
-                                <Clock size={20} />
-                                <div className="stat-label">Time</div>
-                                <div className="stat-value">{format(gameDate, 'HH:mm')}</div>
+                            <div className="stat-card">
+                                <Clock size={24} />
+                                <div>
+                                    <label>Tip-off</label>
+                                    <span>{format(gameDate, 'HH:mm')}</span>
+                                </div>
                             </div>
-                            <div className="info-stat">
-                                <Users size={20} />
-                                <div className="stat-label">Squad Size</div>
-                                <div className="stat-value">{game.minPlayers} - {game.maxPlayers} Players</div>
+                            <div className="stat-card">
+                                <Users size={24} />
+                                <div>
+                                    <label>Squad</label>
+                                    <span>{game.minPlayers} - {game.maxPlayers}</span>
+                                </div>
                             </div>
                         </div>
                     </section>
 
-                    <section className="players-section glass">
-                        <div className="section-header">
-                            <h3><ShieldCheck size={20} className="icon-primary" /> Registered Players</h3>
-                            <span className="player-count-badge">
-                                {game.playersCount} / {game.maxPlayers}
-                            </span>
+                    <section className="glass-card detail-section">
+                        <div className="section-title">
+                            <ShieldCheck size={20} className="text-primary" />
+                            <h3>The Squad</h3>
+                            <span className="count-pill">{game.playersCount} / {game.maxPlayers}</span>
                         </div>
 
-                        <div className="players-list">
-                            {game.players && game.players.length > 0 ? (
-                                game.players.map((player: any) => (
+                        <div className="premium-players-grid">
+                            <AnimatePresence>
+                                {game.players?.map((player: any, idx: number) => (
                                     <motion.div
                                         key={player.id}
-                                        className="player-item"
-                                        whileHover={{ x: 5 }}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        className="premium-player-tag"
                                     >
-                                        <div className="player-avatar">
-                                            {player.username[0].toUpperCase()}
-                                        </div>
-                                        <div className="player-info">
-                                            <span className="player-name">@{player.username}</span>
-                                            <span className="player-meta">
-                                                {player.positions?.join(', ') || 'Crossover Master'}
-                                            </span>
-                                        </div>
+                                        <div className="tag-avatar">{player.username[0]}</div>
+                                        <span>@{player.username}</span>
                                     </motion.div>
-                                ))
-                            ) : (
-                                <div className="empty-players">
-                                    <p>No players have joined yet. Be the first!</p>
-                                </div>
+                                ))}
+                            </AnimatePresence>
+                            {(!game.players || game.players.length === 0) && (
+                                <div className="empty-squad">No ballers yet. Step up.</div>
                             )}
                         </div>
                     </section>
                 </div>
 
-                <aside className="details-sidebar">
-                    {/* We can add more info here like map or similar games */}
-                    <div className="sidebar-card glass">
-                        <h3>Court Location</h3>
-                        <div className="mini-map-placeholder">
-                            <MapPin size={48} className="map-icon" />
+                {/* SIDEBAR */}
+                <aside className="premium-sidebar">
+                    <div className="glass-card sidebar-widget">
+                        <h3>Location Intel</h3>
+                        <div className="location-visual">
+                            <div className="v-map">
+                                <MapPin size={40} className="pulse-icon" />
+                            </div>
                             <p>{game.location}</p>
+                            <small>Outdoor Full Court</small>
                         </div>
                     </div>
                 </aside>

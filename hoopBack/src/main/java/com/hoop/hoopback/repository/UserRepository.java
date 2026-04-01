@@ -47,4 +47,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     default boolean isMutualFollow(Long userAId, Long userBId) {
         return isFollowing(userAId, userBId) && isFollowing(userBId, userAId);
     }
+
+    @Query("SELECT u FROM User u WHERE u.id <> :currentUserId ORDER BY u.followersCount DESC")
+    List<User> findRecommendedUsers(Long currentUserId, org.springframework.data.domain.Pageable pageable);
 }
