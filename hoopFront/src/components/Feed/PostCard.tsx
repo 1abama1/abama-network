@@ -48,11 +48,11 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isSyncing) return;
-    
+
     // OPTIMISTIC UPDATE
     const wasLiked = localLiked;
     const newCount = wasLiked ? localLikeCount - 1 : localLikeCount + 1;
-    
+
     setLocalLiked(!wasLiked);
     setLocalLikeCount(newCount);
     setIsSyncing(true);
@@ -115,88 +115,92 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
 
   return (
     <>
-      <motion.div 
+      <motion.div
         className={`post-card ${post.originalPost ? 'is-repost' : ''}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         layout
         onClick={handleCardClick}
       >
-      {post.originalPost && (
-        <div className="repost-indicator">
-          <Repeat size={14} />
-          <span>{post.author.username} reposted</span>
-        </div>
-      )}
-
-      <div className="post-main-content">
-        <div className="post-avatar">
-          <div className="avatar-placeholder">
-            {(post.originalPost ? post.originalPost.author.username : post.author.username).charAt(0).toUpperCase()}
+        {post.originalPost && (
+          <div className="repost-indicator">
+            <Repeat size={14} />
+            <span>{post.author.username} reposted</span>
           </div>
-        </div>
-        
-        <div className="post-content-container">
-          <div className="post-user-info">
-            <span className="post-user-name">
-              {post.originalPost ? post.originalPost.author.displayName || post.originalPost.author.username : post.author.displayName || post.author.username}
-            </span>
-            <span className="post-user-handle">
-              @{post.originalPost ? post.originalPost.author.username : post.author.username}
-            </span>
-            <span className="dot">·</span>
-            <span className="post-time">
-              {formatDistanceToNow(new Date(post.originalPost ? post.originalPost.createdAt : post.createdAt))} ago
-            </span>
-            <button className="post-options-btn"><MoreHorizontal size={18} /></button>
-          </div>
-          
-          <p className="post-text">
-            {post.originalPost ? post.originalPost.content : post.content}
-          </p>
+        )}
 
-          {post.repostCaption && (
-            <div className="quote-caption">
-              {post.repostCaption}
+        <div className="post-main-content">
+          <div className="post-avatar">
+            <div className="avatar-placeholder">
+              {(post.originalPost ? post.originalPost.author.username : post.author.username).charAt(0).toUpperCase()}
             </div>
-          )}
-          
-          <div className="post-interactions">
-            <button 
-              className="interaction-btn comment-btn"
-              onClick={handleCardClick}
-            >
-              <MessageCircle size={18} />
-              <span>{post.originalPost ? post.originalPost.commentsCount : post.commentsCount}</span>
-            </button>
-            
-            <button 
-              className={`interaction-btn repost-btn ${localReposted ? 'active' : ''}`}
-              onClick={handleRepost}
-            >
-              <Repeat size={18} />
-              <span>{localRepostCount}</span>
-            </button>
-            
-            <button 
-              className={`interaction-btn like-btn ${localLiked ? 'active' : ''}`}
-              onClick={handleLike}
-            >
-              <motion.div 
-                animate={localLiked ? { scale: [1, 1.4, 1] } : {}}
-                transition={{ duration: 0.2 }}
+          </div>
+
+          <div className="post-content-container">
+            <div className="post-user-info">
+              <span className="post-user-name">
+                {post.originalPost ? post.originalPost.author.displayName || post.originalPost.author.username : post.author.displayName || post.author.username}
+              </span>
+              <span className="post-user-handle">
+                @{post.originalPost ? post.originalPost.author.username : post.author.username}
+              </span>
+              <span className="dot">·</span>
+              <span className="post-time">
+                {(() => {
+                  const rawDate = post.originalPost ? post.originalPost.createdAt : post.createdAt;
+                  const dateStr = rawDate.endsWith('Z') ? rawDate : rawDate + 'Z';
+                  return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+                })()}
+              </span>
+              <button className="post-options-btn"><MoreHorizontal size={18} /></button>
+            </div>
+
+            <p className="post-text">
+              {post.originalPost ? post.originalPost.content : post.content}
+            </p>
+
+            {post.repostCaption && (
+              <div className="quote-caption">
+                {post.repostCaption}
+              </div>
+            )}
+
+            <div className="post-interactions">
+              <button
+                className="interaction-btn comment-btn"
+                onClick={handleCardClick}
               >
-                <Heart size={18} fill={localLiked ? "#f91880" : "none"} stroke={localLiked ? "#f91880" : "currentColor"} />
-              </motion.div>
-              <span>{localLikeCount}</span>
-            </button>
-            
-            <button className="interaction-btn share-btn">
-              <Share size={18} />
-            </button>
+                <MessageCircle size={18} />
+                <span>{post.originalPost ? post.originalPost.commentsCount : post.commentsCount}</span>
+              </button>
+
+              <button
+                className={`interaction-btn repost-btn ${localReposted ? 'active' : ''}`}
+                onClick={handleRepost}
+              >
+                <Repeat size={18} />
+                <span>{localRepostCount}</span>
+              </button>
+
+              <button
+                className={`interaction-btn like-btn ${localLiked ? 'active' : ''}`}
+                onClick={handleLike}
+              >
+                <motion.div
+                  animate={localLiked ? { scale: [1, 1.4, 1] } : {}}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Heart size={18} fill={localLiked ? "#f91880" : "none"} stroke={localLiked ? "#f91880" : "currentColor"} />
+                </motion.div>
+                <span>{localLikeCount}</span>
+              </button>
+
+              <button className="interaction-btn share-btn">
+                <Share size={18} />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
       </motion.div>
     </>
   );

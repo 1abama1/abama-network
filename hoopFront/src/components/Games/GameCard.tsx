@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { MapPin, Users, Clock, ChevronRight } from 'lucide-react';
+import { MapPin, Users, Clock, ChevronRight, User } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import './Games.css';
 
 interface GameProps {
@@ -24,51 +25,76 @@ interface GameProps {
 const GameCard = ({ game, onRegister }: GameProps) => {
   const gameDate = new Date(game.dateTime);
   const isFull = game.playersCount >= game.maxPlayers;
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    navigate(`/game/${game.id}`);
+  };
 
   return (
-    <motion.div 
+    <motion.div
       className="game-card glass"
       whileHover={{ y: -5, borderColor: 'var(--primary)' }}
       transition={{ duration: 0.2 }}
+      onClick={handleCardClick}
+      style={{ cursor: 'pointer' }}
     >
       <div className="game-card-header">
-        <div className="game-date-badge">
-          <span className="month">{format(gameDate, 'MMM')}</span>
-          <span className="day">{format(gameDate, 'dd')}</span>
-        </div>
         <div className="game-main-info">
           <h3>{game.title}</h3>
-          <p className="game-location"><MapPin size={14} /> {game.location}</p>
+          <div className="game-sub-info">
+            <span className="game-location">
+              <MapPin size={14} /> {game.location}
+            </span>
+            <span className="header-divider">•</span>
+            <span className="game-creator">
+              <User size={14} /> @{game.creator.username}
+            </span>
+          </div>
         </div>
-        {game.isRegistered && <span className="registered-badge">Registered</span>}
+        {game.isRegistered && (
+          <div className="status-container">
+            <span className="registered-badge">Registered</span>
+          </div>
+        )}
       </div>
 
       <div className="game-details">
         <div className="detail-item">
           <Clock size={16} />
-          <span>{format(gameDate, 'p')}</span>
+          <span>{format(gameDate, 'HH:mm')}</span>
         </div>
         <div className="detail-item">
           <Users size={16} />
-          <span>{game.playersCount}/{game.maxPlayers} Players</span>
+          <span>{game.playersCount}/{game.maxPlayers}</span>
         </div>
       </div>
 
       <p className="game-description">{game.description}</p>
 
       <div className="game-card-footer">
-        <div className="player-progress">
-          <div 
-            className="progress-bar" 
-            style={{ width: `${(game.playersCount / game.maxPlayers) * 100}%` }} 
-          />
+        <div className="player-progress-container">
+          <div className="progress-text">
+            <span>Progress</span>
+            <span>{Math.round((game.playersCount / game.maxPlayers) * 100)}%</span>
+          </div>
+          <div className="player-progress">
+            <div
+              className="progress-bar"
+              style={{ width: `${(game.playersCount / game.maxPlayers) * 100}%` }}
+            />
+          </div>
         </div>
-        <button 
+
+        <button
           className={`btn-primary ${game.isRegistered ? 'btn-outline' : ''}`}
           disabled={isFull && !game.isRegistered}
-          onClick={() => onRegister(game.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRegister(game.id);
+          }}
         >
-          {game.isRegistered ? 'Leave' : isFull ? 'Full' : 'Join Game'}
+          {game.isRegistered ? 'Leave' : isFull ? 'Full' : 'Join'}
           <ChevronRight size={18} />
         </button>
       </div>

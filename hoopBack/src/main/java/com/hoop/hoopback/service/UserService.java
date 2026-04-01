@@ -27,10 +27,11 @@ public class UserService {
     public UserDto getProfile(String username, String currentUsername) {
         User user = userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
-        
-        User currentUser = currentUsername != null ? 
-            userRepository.findByUsernameIgnoreCase(currentUsername).orElse(null) : null;
-            
+
+        User currentUser = currentUsername != null
+                ? userRepository.findByUsernameIgnoreCase(currentUsername).orElse(null)
+                : null;
+
         return mapToDto(user, currentUser);
     }
 
@@ -51,7 +52,7 @@ public class UserService {
 
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = "profiles", allEntries = true)
+            @CacheEvict(value = "profiles", allEntries = true)
     })
     public void follow(String followerUsername, String targetUsername) {
         if (followerUsername.equals(targetUsername)) {
@@ -69,7 +70,7 @@ public class UserService {
 
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = "profiles", allEntries = true)
+            @CacheEvict(value = "profiles", allEntries = true)
     })
     public void unfollow(String followerUsername, String targetUsername) {
         User follower = userRepository.findByUsernameIgnoreCase(followerUsername)
@@ -101,8 +102,8 @@ public class UserService {
     }
 
     private UserDto mapToDto(User user, User currentUser) {
-        boolean isFollowing = currentUser != null && user.getFollowers().contains(currentUser);
-        
+        boolean isFollowing = currentUser != null && userRepository.isFollowing(user.getId(), currentUser.getId());
+
         return new UserDto(
                 user.getId(),
                 user.getUsername(),
@@ -114,8 +115,7 @@ public class UserService {
                 user.getPositions(),
                 userRepository.countFollowersByUserId(user.getId()),
                 userRepository.countFollowingByUserId(user.getId()),
-                isFollowing
-        );
+                isFollowing);
     }
 
     private UserSummaryDto mapToSummaryDto(User user) {
@@ -124,7 +124,6 @@ public class UserService {
                 user.getUsername(),
                 user.getPositions(),
                 user.getHeight(),
-                userRepository.countFollowersByUserId(user.getId())
-        );
+                userRepository.countFollowersByUserId(user.getId()));
     }
 }

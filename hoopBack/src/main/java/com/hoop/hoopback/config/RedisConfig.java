@@ -1,5 +1,9 @@
 package com.hoop.hoopback.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,21 +36,25 @@ public class RedisConfig {
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory factory) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY);
+
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-            .entryTtl(Duration.ofMinutes(5))
-            .serializeKeysWith(
-                RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer())
-            )
-            .serializeValuesWith(
-                RedisSerializationContext.SerializationPair.fromSerializer(
-                    new GenericJackson2JsonRedisSerializer()
-                )
-            );
+                .entryTtl(Duration.ofMinutes(5))
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(
+                                new GenericJackson2JsonRedisSerializer(mapper)));
 
         return RedisCacheManager.builder(factory)
-            .cacheDefaults(config)
-            .withCacheConfiguration("profiles", config.entryTtl(Duration.ofMinutes(5)))
-            .withCacheConfiguration("games", config.entryTtl(Duration.ofMinutes(1)))
-            .build();
+                .cacheDefaults(config)
+                .withCacheConfiguration("profiles", config.entryTtl(Duration.ofMinutes(5)))
+                .withCacheConfiguration("games", config.entryTtl(Duration.ofMinutes(1)))
+                .build();
     }
 }

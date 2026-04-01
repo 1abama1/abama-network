@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { Plus, Filter } from 'lucide-react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Plus, Filter, CalendarDays } from 'lucide-react';
+import { format, isToday, isTomorrow } from 'date-fns';
 import axiosInstance from '../../api/axiosConfig';
 import GameCard from '../../components/Games/GameCard';
 import CreateGameModal from '../../components/Games/CreateGameModal';
@@ -28,6 +29,36 @@ const SchedulePage = () => {
     fetchGames();
   }, [fetchGames]);
 
+  // Группируем игры по датам
+  const groupedGames = useMemo(() => {
+    const groups: { [key: string]: any[] } = {};
+
+    games.forEach(game => {
+      // Форматируем дату в строку 'YYYY-MM-DD' для использования в качестве ключа
+      const dateKey = format(new Date(game.dateTime), 'yyyy-MM-dd');
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(game);
+    });
+
+    // Сортируем ключи (даты) по возрастанию и возвращаем массив групп
+    return Object.keys(groups)
+      .sort()
+      .map(date => ({
+        date,
+        games: groups[date]
+      }));
+  }, [games]);
+
+  // Функция для красивого форматирования заголовка даты
+  const formatGroupHeader = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isToday(date)) return 'Today';
+    if (isTomorrow(date)) return 'Tomorrow';
+    return format(date, 'EEEE, MMMM do'); // Например: "Friday, April 5th"
+  };
+
   const handleRegister = async (id: string | number) => {
     const gameIdStr = String(id);
     const gameIndex = games.findIndex(g => String(g.id) === gameIdStr);
@@ -35,7 +66,7 @@ const SchedulePage = () => {
 
     const game = games[gameIndex];
     const wasRegistered = game.isRegistered;
-    
+
     // OPTIMISTIC UPDATE
     const updatedGames = [...games];
     updatedGames[gameIndex] = {
@@ -88,15 +119,34 @@ const SchedulePage = () => {
           <p>Loading the scout's report...</p>
         </div>
       ) : (
-        <div className="games-grid">
+        <div className="calendar-view">
           <AnimatePresence>
-            {games.length > 0 ? (
-              games.map((game) => (
-                <GameCard 
-                  key={game.id} 
-                  game={game} 
-                  onRegister={handleRegister} 
-                />
+            {groupedGames.length > 0 ? (
+              groupedGames.map((group) => (
+                <motion.div
+                  key={group.date}
+                  className="date-group"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="date-group-header">
+                    <div className="date-badge-icon">
+                      <CalendarDays size={20} />
+                    </div>
+                    <h3>{formatGroupHeader(group.date)}</h3>
+                    <div className="date-divider"></div>
+                  </div>
+
+                  <div className="games-grid">
+                    {group.games.map((game) => (
+                      <GameCard
+                        key={game.id}
+                        game={game}
+                        onRegister={handleRegister}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
               ))
             ) : (
               <div className="empty-state">
@@ -109,7 +159,7 @@ const SchedulePage = () => {
 
       <AnimatePresence>
         {isCreateModalOpen && (
-          <CreateGameModal 
+          <CreateGameModal
             onClose={() => setIsCreateModalOpen(false)}
             onGameCreated={fetchGames}
           />

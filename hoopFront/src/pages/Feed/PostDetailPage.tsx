@@ -9,7 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 const PostDetailPage = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
-  
+
   const [post, setPost] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,10 +96,10 @@ const PostDetailPage = () => {
       </div>
 
       <div className="post-detail-main">
-        <PostCard 
-          post={post} 
-          onUpdate={fetchPostAndComments} 
-          onNavigateToPost={() => {}} // empty so it doesn't navigate again
+        <PostCard
+          post={post}
+          onUpdate={fetchPostAndComments}
+          onNavigateToPost={() => { }} // empty so it doesn't navigate again
         />
       </div>
 
@@ -116,8 +116,8 @@ const PostDetailPage = () => {
             disabled={isSubmitting}
             className="reply-input"
           />
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="reply-submit-btn"
             disabled={!replyContent.trim() || isSubmitting}
           >
@@ -138,7 +138,7 @@ const PostDetailPage = () => {
               <div className="comment-content-wrapper">
                 <div className="comment-header-row">
                   <span className="comment-author-name">@{comment.author.username}</span>
-                  <span className="comment-time">{formatDistanceToNow(new Date(comment.createdAt))} ago</span>
+                  <span className="comment-time">{formatDistanceToNow(new Date(comment.createdAt.endsWith('Z') ? comment.createdAt : comment.createdAt + 'Z'), { addSuffix: true })}</span>
                 </div>
                 <p className="comment-text">{comment.content}</p>
               </div>

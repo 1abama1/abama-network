@@ -23,101 +23,100 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MessageService {
 
-    private final MessageRepository messageRepository;
-    private final UserRepository userRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+        private final MessageRepository messageRepository;
+        private final UserRepository userRepository;
+        private final SimpMessagingTemplate messagingTemplate;
 
-    @Transactional
-    public MessageDto sendMessage(String senderUsername, String receiverUsername, SendMessageRequest request) {
-        User sender = userRepository.findByUsername(senderUsername)
-                .orElseThrow(() -> new InvalidCredentialsException("Отправитель не найден"));
-        User receiver = userRepository.findByUsername(receiverUsername)
-                .orElseThrow(() -> new InvalidCredentialsException("Получатель не найден"));
+        @Transactional
+        public MessageDto sendMessage(String senderUsername, String receiverUsername, SendMessageRequest request) {
+                User sender = userRepository.findByUsername(senderUsername)
+                                .orElseThrow(() -> new InvalidCredentialsException("Отправитель не найден"));
+                User receiver = userRepository.findByUsername(receiverUsername)
+                                .orElseThrow(() -> new InvalidCredentialsException("Получатель не найден"));
 
-        if (!userRepository.isFollowing(receiver.getId(), sender.getId())) {
-            throw new IllegalArgumentException("Вы можете писать только тем пользователям, на которых подписаны");
+                if (!userRepository.isFollowing(receiver.getId(), sender.getId())) {
+                        throw new IllegalArgumentException(
+                                        "Вы можете писать только тем пользователям, на которых подписаны");
+                }
+
+                Message message = Message.builder()
+                                .sender(sender)
+                                .receiver(receiver)
+                                .content(request.content())
+                                .isRead(false)
+                                .build();
+
+                MessageDto dto = mapToDto(messageRepository.save(message));
+
+                // Push to WebSocket
+                messagingTemplate.convertAndSendToUser(receiver.getUsername(), "/queue/messages", dto);
+
+                return dto;
         }
 
-        Message message = Message.builder()
-                .sender(sender)
-                .receiver(receiver)
-                .content(request.content())
-                .isRead(false)
-                .build();
+        @Transactional(readOnly = true)
+        public Page<MessageDto> getConversation(String username, String otherUsername, Pageable pageable) {
+                User user = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+                User other = userRepository.findByUsername(otherUsername)
+                                .orElseThrow(() -> new InvalidCredentialsException("Собеседник не найден"));
 
-        MessageDto dto = mapToDto(messageRepository.save(message));
-        
-        // Push to WebSocket
-        messagingTemplate.convertAndSendToUser(receiver.getUsername(), "/queue/messages", dto);
-        
-        return dto;
-    }
-
-    @Transactional(readOnly = true)
-    public Page<MessageDto> getConversation(String username, String otherUsername, Pageable pageable) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
-        User other = userRepository.findByUsername(otherUsername)
-                .orElseThrow(() -> new InvalidCredentialsException("Собеседник не найден"));
-
-        return messageRepository.findConversation(user, other, pageable)
-                .map(this::mapToDto);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ChatSummaryDto> getChatList(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
-
-        return messageRepository.findLatestMessagesPerContact(user).stream()
-                .map(msg -> mapToChatSummaryDto(msg, username))
-                .collect(Collectors.toList());
-    }
-
-    private ChatSummaryDto mapToChatSummaryDto(Message message, String currentUsername) {
-        String otherUsername = message.getSender().getUsername().equals(currentUsername)
-                ? message.getReceiver().getUsername()
-                : message.getSender().getUsername();
-        
-        return new ChatSummaryDto(
-                otherUsername,
-                message.getContent(),
-                message.getSentAt(),
-                0 // unreadCount calculation logic can be added later if needed
-        );
-    }
-
-    @Transactional
-    public void markAsRead(Long messageId, String username) {
-        Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new IllegalArgumentException("Сообщение не найдено"));
-
-        if (!message.getReceiver().getUsername().equals(username)) {
-            throw new IllegalArgumentException("Вы не можете отметить чужое сообщение как прочитанное");
+                return messageRepository.findConversation(user, other, pageable)
+                                .map(this::mapToDto);
         }
 
-        message.setRead(true);
-        messageRepository.save(message);
-    }
+        @Transactional(readOnly = true)
+        public List<ChatSummaryDto> getChatList(String username) {
+                User user = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
 
-    private MessageDto mapToDto(Message message) {
-        return new MessageDto(
-                message.getId(),
-                mapUserToSummaryDto(message.getSender()),
-                mapUserToSummaryDto(message.getReceiver()),
-                message.getContent(),
-                message.getSentAt(),
-                message.isRead()
-        );
-    }
+                return messageRepository.findLatestMessagesPerContact(user).stream()
+                                .map(msg -> mapToChatSummaryDto(msg, username))
+                                .collect(Collectors.toList());
+        }
 
-    private UserSummaryDto mapUserToSummaryDto(User user) {
-        return new UserSummaryDto(
-                user.getId(),
-                user.getUsername(),
-                user.getPositions(),
-                user.getHeight(),
-                user.getFollowers().size()
-        );
-    }
+        private ChatSummaryDto mapToChatSummaryDto(Message message, String currentUsername) {
+                String otherUsername = message.getSender().getUsername().equals(currentUsername)
+                                ? message.getReceiver().getUsername()
+                                : message.getSender().getUsername();
+
+                return new ChatSummaryDto(
+                                otherUsername,
+                                message.getContent(),
+                                message.getSentAt(),
+                                0 // unreadCount calculation logic can be added later if needed
+                );
+        }
+
+        @Transactional
+        public void markAsRead(Long messageId, String username) {
+                Message message = messageRepository.findById(messageId)
+                                .orElseThrow(() -> new IllegalArgumentException("Сообщение не найдено"));
+
+                if (!message.getReceiver().getUsername().equals(username)) {
+                        throw new IllegalArgumentException("Вы не можете отметить чужое сообщение как прочитанное");
+                }
+
+                message.setRead(true);
+                messageRepository.save(message);
+        }
+
+        private MessageDto mapToDto(Message message) {
+                return new MessageDto(
+                                message.getId(),
+                                mapUserToSummaryDto(message.getSender()),
+                                mapUserToSummaryDto(message.getReceiver()),
+                                message.getContent(),
+                                message.getSentAt(),
+                                message.isRead());
+        }
+
+        private UserSummaryDto mapUserToSummaryDto(User user) {
+                return new UserSummaryDto(
+                                user.getId(),
+                                user.getUsername(),
+                                user.getPositions(),
+                                user.getHeight(),
+                                user.getFollowersCount() != null ? user.getFollowersCount() : 0);
+        }
 }

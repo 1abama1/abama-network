@@ -9,6 +9,7 @@ import ExplorePage from './pages/Feed/ExplorePage.tsx';
 import PostDetailPage from './pages/Feed/PostDetailPage';
 import NotificationsPage from './pages/Notifications/NotificationsPage.tsx';
 import SchedulePage from './pages/Games/SchedulePage';
+import GameDetailsPage from './pages/Games/GameDetailsPage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import ChatPage from './pages/Messages/ChatPage';
 import Layout from './components/Layout/Layout';
@@ -16,14 +17,14 @@ import './index.css';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        height: '100vh', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        height: '100vh',
+        justifyContent: 'center',
+        alignItems: 'center',
         fontSize: '2rem',
         fontWeight: 'bold',
         color: 'var(--primary)'
@@ -32,7 +33,7 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
-  
+
   return isAuthenticated ? <Layout>{children as React.ReactElement}</Layout> : <Navigate to="/login" />;
 };
 
@@ -45,65 +46,73 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
-          
+
           {/* Private Routes */}
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <PrivateRoute>
                 <HomeFeed />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/post/:postId" 
+          <Route
+            path="/post/:postId"
             element={
               <PrivateRoute>
                 <PostDetailPage />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/explore" 
+          <Route
+            path="/explore"
             element={
               <PrivateRoute>
                 <ExplorePage />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/notifications" 
+          <Route
+            path="/notifications"
             element={
               <PrivateRoute>
                 <NotificationsPage />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/schedule" 
+          <Route
+            path="/schedule"
             element={
               <PrivateRoute>
                 <SchedulePage />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/profile/:username" 
+          <Route
+            path="/game/:gameId"
+            element={
+              <PrivateRoute>
+                <GameDetailsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/profile/:username"
             element={
               <PrivateRoute>
                 <ProfilePage />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/messages" 
+          <Route
+            path="/messages"
             element={
               <PrivateRoute>
                 <ChatPage />
               </PrivateRoute>
-            } 
+            }
           />
-          
+
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

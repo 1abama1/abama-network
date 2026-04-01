@@ -2,11 +2,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { RefreshCw } from 'lucide-react';
 import axiosInstance from '../../api/axiosConfig';
+import { useAuth } from '../../context/AuthContext';
 import CreatePost from '../../components/Feed/CreatePost';
 import PostCard from '../../components/Feed/PostCard';
 import '../../components/Feed/Feed.css';
 
 const HomeFeed = () => {
+  const { user } = useAuth();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -35,7 +37,7 @@ const HomeFeed = () => {
     <div className="home-feed">
       <div className="feed-header glass">
         <h2>Home</h2>
-        <button 
+        <button
           className={`refresh-btn ${refreshing ? 'spinning' : ''}`}
           onClick={() => fetchPosts(true)}
           disabled={refreshing}
@@ -45,14 +47,14 @@ const HomeFeed = () => {
       </div>
 
       <div className="feed-content">
-        <CreatePost 
-          onPostCreated={() => fetchPosts(true)} 
+        <CreatePost
+          onPostCreated={() => fetchPosts(true)}
           onOptimisticPost={(content) => {
             const tempPost = {
               id: -Date.now(),
               content,
               createdAt: new Date().toISOString(),
-              author: { username: 'me', displayName: 'Me' }, // Fallback, will be replaced on refresh
+              author: { username: user?.username || 'Unknown', displayName: user?.username || 'Unknown' },
               likesCount: 0,
               commentsCount: 0,
               repostsCount: 0,
@@ -66,14 +68,14 @@ const HomeFeed = () => {
         <div className="posts-list">
           <AnimatePresence>
             {posts.map((post) => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
-                onUpdate={() => fetchPosts(true)} 
+              <PostCard
+                key={post.id}
+                post={post}
+                onUpdate={() => fetchPosts(true)}
               />
             ))}
           </AnimatePresence>
-          
+
           {loading && (
             <div className="feed-loading">
               <div className="basketball-spinner" />
