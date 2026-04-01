@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  Home, 
-  Search, 
-  Calendar, 
-  MessageSquare, 
-  User, 
-  LogOut, 
+import {
+  Home,
+  Search,
+  Calendar,
+  MessageSquare,
+  User,
+  LogOut,
   Trophy,
   Bell
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import axiosInstance from '../../api/axiosConfig';
 import './Navigation.css';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications(user?.username);
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -53,9 +55,9 @@ const Sidebar = () => {
       <div className="sidebar-search">
         <div className="search-input-wrapper">
           <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search ballers..." 
+          <input
+            type="text"
+            placeholder="Search ballers..."
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             onFocus={() => searchQuery.length > 1 && setShowResults(true)}
@@ -64,8 +66,8 @@ const Sidebar = () => {
         {showResults && searchResults.length > 0 && (
           <div className="search-results-dropdown glass">
             {searchResults.map((result) => (
-              <div 
-                key={result.id} 
+              <div
+                key={result.id}
                 className="search-result-item"
                 onClick={() => navigateToProfile(result.username)}
               >
@@ -94,7 +96,29 @@ const Sidebar = () => {
           <span>Explore</span>
         </NavLink>
         <NavLink to="/notifications" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-          <Bell size={24} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Bell size={24} />
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: -8,
+                right: -8,
+                background: 'var(--primary)',
+                color: '#000',
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 0 10px var(--primary)'
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </div>
           <span>Notifications</span>
         </NavLink>
         <NavLink to="/messages" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>

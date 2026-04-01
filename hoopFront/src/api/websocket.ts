@@ -1,72 +1,90 @@
-import { Client } from '@stomp/stompjs';
+import { Client, type StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-export class WebSocketClient {
-    private client: Client;
-    private onConnectCallbacks: (() => void)[] = [];
+type MessageCallback = (msg: any) => void;
 
-    constructor(token: string) {
-        this.client = new Client({
-            webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
-            connectHeaders: {
-                Authorization: `Bearer ${token}`
-            },
-            reconnectDelay: 5000,
-            onConnect: () => {
-                console.log('Connected to WebSocket');
-                this.onConnectCallbacks.forEach(cb => cb());
-            },
-            onStompError: (frame) => {
-                console.error('STOMP error', frame);
+class WebSocketService {
+    private client: Client | null = null;
+    private subscriptions = new Map<string, StompSubscription>();
+    private pendingSubscriptions: Array<{ dest: string; cb: MessageCallback }> = [];
+
+    connect(token: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (this.client?.connected) {
+                resolve();
+                return;
             }
+
+            this.client = new Client({
+                webSocketFactory: () => new SockJS('http://localhost:8080/ws') as WebSocket,
+                connectHeaders: { Authorization: `Bearer ${token}` },
+                reconnectDelay: 5000,
+                onConnect: () => {
+                    console.log('Connected to WebSocket');
+                    // Process pending subscriptions
+                    this.pendingSubscriptions.forEach(({ dest, cb }) => this.doSubscribe(dest, cb));
+                    this.pendingSubscriptions = [];
+                    resolve();
+                },
+                onStompError: (frame) => {
+                    console.error('STOMP error', frame.body);
+                    reject(new Error(frame.body));
+                },
+            });
+            this.client.activate();
         });
     }
 
-    public connect() {
-        if (!this.client.active) {
-            this.client.activate();
+    subscribe(destination: string, callback: MessageCallback): void {
+        if (this.client?.connected) {
+            this.doSubscribe(destination, callback);
+        } else {
+            // Delay until connected to fix race conditions
+            this.pendingSubscriptions.push({ dest: destination, cb: callback });
         }
     }
 
-    public disconnect() {
-        if (this.client.active) {
-            this.client.deactivate();
-        }
-    }
-
-    public onConnect(callback: () => void) {
-        this.onConnectCallbacks.push(callback);
-        if (this.client.active) {
-            callback();
-        }
-    }
-
-    public subscribe(destination: string, callback: (message: any) => void) {
-        return this.client.subscribe(destination, (msg) => {
+    private doSubscribe(destination: string, callback: MessageCallback): void {
+        if (this.subscriptions.has(destination)) return; // Avoid duplicate subs
+        const sub = this.client!.subscribe(destination, (msg) => {
             if (msg.body) {
                 callback(JSON.parse(msg.body));
             }
         });
+        this.subscriptions.set(destination, sub);
+    }
+
+    unsubscribe(destination: string): void {
+        this.subscriptions.get(destination)?.unsubscribe();
+        this.subscriptions.delete(destination);
+    }
+
+    publish(destination: string, body: any): void {
+        if (this.client?.connected) {
+            this.client.publish({
+                destination,
+                body: JSON.stringify(body)
+            });
+        }
+    }
+
+    disconnect(): void {
+        this.client?.deactivate();
+        this.client = null;
+        this.subscriptions.clear();
+        this.pendingSubscriptions = [];
+    }
+
+    get isConnected(): boolean {
+        return this.client?.connected ?? false;
     }
 }
 
-// Singleton instance management
-let wsInstance: WebSocketClient | null = null;
+// Singleton
+export const wsService = new WebSocketService();
 
-export const getWebSocketClient = (): WebSocketClient | null => {
+export const initWebSocket = async (): Promise<void> => {
     const token = localStorage.getItem('accessToken');
-    if (!token) return null;
-
-    if (!wsInstance) {
-        wsInstance = new WebSocketClient(token);
-        wsInstance.connect();
-    }
-    return wsInstance;
-};
-
-export const disconnectWebSocket = () => {
-    if (wsInstance) {
-        wsInstance.disconnect();
-        wsInstance = null;
-    }
+    if (!token || wsService.isConnected) return;
+    await wsService.connect(token);
 };

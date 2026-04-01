@@ -4,6 +4,7 @@ import com.hoop.hoopback.dto.request.UpdateProfileRequest;
 import com.hoop.hoopback.dto.response.UserDto;
 import com.hoop.hoopback.dto.response.UserSummaryDto;
 import com.hoop.hoopback.entity.User;
+import com.hoop.hoopback.entity.NotificationType;
 import com.hoop.hoopback.exception.InvalidCredentialsException;
 import com.hoop.hoopback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Cacheable(value = "profiles", key = "#username?.toLowerCase() + ':' + #currentUsername?.toLowerCase()")
     public UserDto getProfile(String username, String currentUsername) {
@@ -66,6 +68,9 @@ public class UserService {
 
         target.getFollowers().add(follower);
         userRepository.save(target);
+
+        // Notify target user
+        notificationService.notify(target, follower, NotificationType.FOLLOW, target.getId(), "USER");
     }
 
     @Transactional

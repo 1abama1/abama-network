@@ -3,6 +3,7 @@ package com.hoop.hoopback.config;
 import com.hoop.hoopback.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -28,6 +29,9 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    @Value("${app.cors.allowed-origins:http://localhost:5174,http://localhost:80,http://localhost}")
+    private String[] allowedOrigins;
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
@@ -41,7 +45,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:5174")
+                .setAllowedOrigins(allowedOrigins)
                 .withSockJS();
     }
 
@@ -50,8 +54,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registration.interceptors(new ChannelInterceptor() {
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
-                StompHeaderAccessor accessor =
-                        MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
                     String authHeader = accessor.getFirstNativeHeader("Authorization");
                     if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -62,8 +65,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                                 if (jwtService.isTokenValid(jwt, userDetails)) {
                                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                                            userDetails, null, userDetails.getAuthorities()
-                                    );
+                                            userDetails, null, userDetails.getAuthorities());
                                     accessor.setUser(authentication);
                                 }
                             }

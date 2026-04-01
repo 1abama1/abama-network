@@ -6,6 +6,7 @@ import com.hoop.hoopback.dto.response.UserSummaryDto;
 import com.hoop.hoopback.entity.Game;
 import com.hoop.hoopback.entity.GameRegistration;
 import com.hoop.hoopback.entity.User;
+import com.hoop.hoopback.entity.NotificationType;
 import com.hoop.hoopback.exception.InvalidCredentialsException;
 import com.hoop.hoopback.repository.GameRegistrationRepository;
 import com.hoop.hoopback.repository.GameRepository;
@@ -27,6 +28,7 @@ public class GameService {
         private final GameRepository gameRepository;
         private final GameRegistrationRepository gameRegistrationRepository;
         private final UserRepository userRepository;
+        private final NotificationService notificationService;
 
         @Transactional
         @CacheEvict(value = "games", allEntries = true)
@@ -69,6 +71,9 @@ public class GameService {
                                 .build();
 
                 gameRegistrationRepository.save(registration);
+
+                // Notify game creator
+                notificationService.notify(game.getCreator(), user, NotificationType.GAME_JOIN, game.getId(), "GAME");
         }
 
         @Transactional

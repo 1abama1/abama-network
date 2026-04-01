@@ -230,15 +230,155 @@
   gap: 20px;
 }
 
+/* Typing Indicator */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  width: fit-content;
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: typing-bounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-bounce {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+
+  40% {
+    transform: scale(1.0);
+  }
+}
+
+.typing-text {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-left: 4px;
+}
+
+/* Glassmorphism Refinement */
+.glass {
+  background: rgba(18, 18, 20, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.chat-item.active {
+  background: linear-gradient(90deg, rgba(255, 107, 0, 0.15) 0%, rgba(255, 107, 0, 0.05) 100%);
+  border-left: 3px solid var(--primary);
+  box-shadow: inset 4px 0 10px rgba(255, 107, 0, 0.1);
+}
+
+.message-bubble {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.own .message-bubble::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  bottom: 0;
+  border-left: 10px solid var(--primary);
+  border-top: 10px solid transparent;
+}
+
+.other .message-bubble::after {
+  content: '';
+  position: absolute;
+  left: -8px;
+  bottom: 0;
+  border-right: 10px solid var(--bg-input);
+  border-top: 10px solid transparent;
+}
+
+/* Scrollbar */
+.messages-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.messages-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 0, 0.3);
+}
+
+/* Mutuals Section */
+.mutuals-section {
+  padding: 0.5rem 0.5rem 1rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  display: block;
+  padding-left: 5px;
+}
+
+.mutuals-grid {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.mutuals-grid::-webkit-scrollbar {
+  height: 4px;
+}
+
+.mutual-bubble {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  min-width: 60px;
+}
+
+.mutual-name {
+  font-size: 0.7rem;
+  color: var(--text);
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 968px) {
-  .chat-sidebar {
-    width: 80px;
-  }
-  .chat-sidebar-header, .chat-info {
-    display: none;
-  }
-  .chat-item {
-    justify-content: center;
-    padding: 1rem 0;
+  .chat-container {
+    margin: 10px;
+    height: calc(100vh - 20px);
   }
 }
