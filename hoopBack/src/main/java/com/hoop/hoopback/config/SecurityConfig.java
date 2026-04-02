@@ -28,7 +28,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
-    @Value("${app.cors.allowed-origins:http://localhost:5174,http://localhost:80,http://localhost}")
+    @Value("${app.cors.allowed-origins:http://localhost:5174,http://localhost:80,http://localhost,https://abama-network.onrender.com}")
     private List<String> allowedOrigins;
 
     @Bean
@@ -38,13 +38,13 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/ws/**").permitAll()
-                        .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/assets/**", "/static/**", "/*.ico", "/*.json", "/*.png", "/*.svg").permitAll()
+                        .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/assets/**", "/static/**", "/*.ico",
+                                "/*.json", "/*.png", "/*.svg")
+                        .permitAll()
                         .requestMatchers("/{path:[^\\.]*}", "/**/{path:[^\\.]*}").permitAll()
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -56,7 +56,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin",
+                "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
