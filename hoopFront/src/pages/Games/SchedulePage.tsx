@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Plus, Filter, CalendarDays } from 'lucide-react';
+import { Plus, CalendarDays } from 'lucide-react';
 import { format, isToday, isTomorrow } from 'date-fns';
 import axiosInstance from '../../api/axiosConfig';
 import GameCard from '../../components/Games/GameCard';
@@ -102,10 +102,10 @@ const SchedulePage = () => {
           <p>Find your next run</p>
         </div>
         <div className="header-actions">
-          <button className="btn-outline">
+          {/* <button className="btn-outline">
             <Filter size={18} />
             <span>Filter</span>
-          </button>
+          </button> */}
           <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}>
             <Plus size={18} />
             <span>Create Game</span>

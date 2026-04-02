@@ -28,21 +28,12 @@ const Sidebar = () => {
       </div>
 
       <div className="sidebar-search">
-        <button 
-          className="btn-primary post-btn" 
-          style={{ 
-            width: '100%', 
-            justifyContent: 'center', 
-            gap: '0.8rem', 
-            height: '52px',
-            borderRadius: '26px',
-            fontSize: '1.1rem',
-            fontWeight: '700'
-          }}
+        <button
+          className="sidebar-post-btn"
           onClick={() => navigate('/')}
         >
-          <Plus size={24} />
-          <span className="post-text">POST</span>
+          <Plus size={22} strokeWidth={3} />
+          <span className="post-title">POST</span>
         </button>
       </div>
 

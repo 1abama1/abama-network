@@ -165,6 +165,7 @@ public class GameService {
                                 user.getUsername(),
                                 user.getPositions() != null ? new java.util.HashSet<>(user.getPositions()) : null,
                                 user.getHeight(),
-                                user.getFollowersCount() != null ? user.getFollowersCount() : 0);
+                                user.getFollowersCount() != null ? user.getFollowersCount() : 0,
+                                user.getBio());
         }
 }

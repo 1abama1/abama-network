@@ -193,8 +193,9 @@ public class MessageService {
                         u.getUsername(),
                         u.getPositions(),
                         u.getHeight(),
-                        u.getFollowersCount() != null ? u.getFollowersCount() : 0))
-                .toList();
+                        u.getFollowersCount() != null ? u.getFollowersCount() : 0,
+                        u.getBio()))
+                .collect(Collectors.toList());
     }
 
     public String getPartnerUsername(Long conversationId, String myUsername) {

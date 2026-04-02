@@ -35,7 +35,7 @@ const HomeFeed = () => {
 
   return (
     <div className="home-feed">
-      <div className="feed-header glass">
+      <div className="page-header">
         <h2>Home</h2>
         <button
           className={`refresh-btn ${refreshing ? 'spinning' : ''}`}

@@ -260,6 +260,7 @@ public class PostService {
                                 user.getUsername(),
                                 user.getPositions(),
                                 user.getHeight(),
-                                user.getFollowersCount() != null ? user.getFollowersCount() : 0L);
+                                user.getFollowersCount() != null ? user.getFollowersCount() : 0L,
+                                user.getBio());
         }
 }

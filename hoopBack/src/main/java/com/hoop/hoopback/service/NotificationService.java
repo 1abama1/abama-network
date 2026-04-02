@@ -83,7 +83,8 @@ public class NotificationService {
                         n.getActor().getUsername(),
                         n.getActor().getPositions(),
                         n.getActor().getHeight(),
-                        n.getActor().getFollowersCount() != null ? n.getActor().getFollowersCount() : 0);
+                        n.getActor().getFollowersCount() != null ? n.getActor().getFollowersCount() : 0,
+                        n.getActor().getBio());
         return new NotificationDto(
                 n.getId(),
                 n.getType(),

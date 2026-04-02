@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from '../Navigation/Sidebar';
 import axiosInstance from '../../api/axiosConfig';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Trophy, Users, LogOut } from 'lucide-react';
+import { Trophy, Users, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import './Layout.css';
 
@@ -40,6 +40,20 @@ const Layout = ({ children }: LayoutProps) => {
     }
   };
 
+  /* 
+  const handleFollow = async (e: React.MouseEvent, username: string) => {
+    e.stopPropagation();
+    try {
+      await axiosInstance.post(`/users/follow/${username}`);
+      // Refresh the recommended users list
+      const usersRes = await axiosInstance.get('/users/recommended');
+      setRecommendedUsers(usersRes.data.slice(0, 3));
+    } catch (error) {
+      console.error('Failed to follow user', error);
+    }
+  };
+  */
+
   return (
     <div className="layout-container">
       {/* Mobile Top Header */}
@@ -54,7 +68,7 @@ const Layout = ({ children }: LayoutProps) => {
           </button>
         </div>
       </header>
-      
+
       <Sidebar />
       <main className="main-content">
         <div className="content-inner">
@@ -63,9 +77,9 @@ const Layout = ({ children }: LayoutProps) => {
       </main>
       <aside className="right-sidebar">
         <div className="search-bar-container glass">
-          <input 
-            type="text" 
-            placeholder="Search the court..." 
+          <input
+            type="text"
+            placeholder="Search the court..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearch}
@@ -118,15 +132,12 @@ const Layout = ({ children }: LayoutProps) => {
                   <span className="baller-name">{user.username}</span>
                   <span className="baller-handle">@{user.username}</span>
                 </div>
-                <button
+                {/* <button
                   className="follow-small-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/profile/${user.username}`);
-                  }}
+                  onClick={(e) => handleFollow(e, user.username)}
                 >
                   <UserPlus size={14} />
-                </button>
+                </button> */}
               </div>
             )) : (
               <p className="empty-state">Looking for ballers...</p>

@@ -172,12 +172,22 @@ button {
   align-items: center;
   gap: 1.2rem;
   padding: 0.8rem 1rem;
+  height: 40px;
+  /* Фиксированная высота для стабильности */
   color: var(--text-dim);
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
   font-weight: 500;
   font-size: 1.1rem;
   text-decoration: none;
+}
+
+.nav-item span {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  margin-top: 1px;
+  /* Чтобы текст в меню тоже стоял вровень с иконками */
 }
 
 .nav-item i,
@@ -296,14 +306,15 @@ button {
 
 .nav-unread-badge {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
   background: var(--primary);
   color: #000;
   font-size: 0.7rem;
   font-weight: 900;
-  width: 20px;
-  height: 20px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -315,28 +326,88 @@ button {
 
 @media (max-width: 1200px) {
   .sidebar {
-    width: 80px;
-    padding: 1.5rem 1rem;
+    width: 88px;
+    padding: 1.5rem 0;
+    align-items: center;
   }
 
   .logo-text,
   .nav-item span,
   .user-info,
   .sidebar-footer button span,
-  .post-text {
-    display: none;
+  .post-text,
+  .post-title,
+  .user-status {
+    display: none !important;
   }
 
   .sidebar-header {
     justify-content: center;
+    margin-bottom: 1.5rem;
     padding-left: 0;
+    width: 100%;
   }
 
-  .nav-item,
-  .post-btn,
-  .logout-btn {
+  .sidebar-nav {
+    align-items: center;
+    width: 100%;
+  }
+
+  .nav-item {
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    margin: 0 auto;
+    border-radius: 50%;
+  }
+
+  .nav-item:hover {
+    transform: none;
+  }
+
+  .nav-item.active {
+    border-left: none;
+    background: rgba(255, 107, 0, 0.1);
+    color: var(--primary);
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.1);
+  }
+
+  .sidebar-search {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 0 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .sidebar-post-btn {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
     justify-content: center !important;
-    padding-left: 0 !important;
+    overflow: hidden;
+  }
+
+  .sidebar-footer {
+    align-items: center;
+    padding: 1rem 0;
+    width: 100%;
+  }
+
+  .user-profile-brief {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .logout-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
   }
 }
 
@@ -389,22 +460,82 @@ button {
 }
 
 @media (max-height: 800px) {
-  .sidebar { 
-    padding: 1.25rem 1.5rem; 
+  .sidebar {
+    padding: 1.25rem 1.5rem;
   }
-  .sidebar-header { 
-    margin-bottom: 1rem; 
+
+  .sidebar-header {
+    margin-bottom: 1rem;
   }
-  .sidebar-search { 
-    margin-bottom: 1rem; 
+
+  .sidebar-search {
+    margin-bottom: 1rem;
   }
+
   .sidebar-nav {
     gap: 0.25rem;
   }
-  .nav-item { 
-    padding: 0.6rem 0.75rem; 
+
+  .nav-item {
+    padding: 0.6rem 0.75rem;
   }
-  .sidebar-footer { 
-    padding-top: 1rem; 
+
+  .sidebar-footer {
+    padding-top: 1rem;
   }
+}
+
+/* Кнопка POST в сайдбаре */
+.sidebar-post-btn {
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  /* Центр по вертикали */
+  justify-content: center;
+  /* Центр по горизонтали */
+  gap: 10px;
+  border-radius: 26px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  /* Важно: убираем системные паддинги */
+  transition: all 0.2s ease;
+  background: #0A0A0A;
+  /* Из btn-primary */
+  color: var(--primary);
+  /* Из btn-primary */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 107, 0, 0.05);
+  /* Из btn-primary */
+}
+
+.sidebar-post-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  border-color: var(--primary);
+  box-shadow: 0 0 25px rgba(255, 107, 0, 0.3);
+  color: #fff;
+}
+
+.post-text {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  /* Схлопываем высоту строки */
+  height: 22px;
+  /* Привязываем высоту текста к высоте иконки для параллельности */
+  margin-top: 1px;
+  /* Микро-корректировка под базовую линию шрифта */
+}
+
+.post-title {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  /* Схлопываем высоту строки */
+  height: 22px;
+  /* Привязываем высоту текста к высоте иконки для параллельности */
+  margin-bottom: 0 !important;
+  /* Микро-корректировка под базовую линию шрифта */
 }

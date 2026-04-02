@@ -84,7 +84,8 @@ public class AuthService {
                         user.getUsername(),
                         user.getPositions(),
                         user.getHeight(),
-                        user.getFollowersCount() != null ? user.getFollowersCount() : 0L
+                        user.getFollowersCount() != null ? user.getFollowersCount() : 0L,
+                        user.getBio()
                 ))
                 .build();
     }
@@ -164,7 +165,8 @@ public class AuthService {
                                 userDetails.getUsername(),
                                 userDetails.getPositions(),
                                 userDetails.getHeight(),
-                                userDetails.getFollowersCount() != null ? userDetails.getFollowersCount() : 0L
+                                userDetails.getFollowersCount() != null ? userDetails.getFollowersCount() : 0L,
+                                userDetails.getBio()
                         ))
                         .build();
             }
