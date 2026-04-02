@@ -6,6 +6,7 @@ import com.hoop.hoopback.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -13,4 +14,5 @@ public interface GameRegistrationRepository extends JpaRepository<GameRegistrati
     Optional<GameRegistration> findByUserAndGame(User user, Game game);
     boolean existsByUserAndGame(User user, Game game);
     long countByGame(Game game);
+    List<GameRegistration> findAllByUserOrderByRegisteredAtDesc(User user);
 }

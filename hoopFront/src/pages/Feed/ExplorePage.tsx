@@ -16,7 +16,7 @@ interface GameSummary {
   location: string;
   dateTime: string;
   maxPlayers: number;
-  currentPlayersCount: number;
+  playersCount: number;
 }
 
 interface UserSummary {
@@ -25,6 +25,7 @@ interface UserSummary {
   positions: string[];
   height: number;
   followersCount: number;
+  bio?: string;
 }
 
 const ExplorePage = () => {
@@ -404,14 +405,11 @@ const ExplorePage = () => {
                       </div>
                       <div className="people-info">
                         <span className="people-name">@{user.username}</span>
+                        {user.bio && <p className="people-bio-snippet">{user.bio}</p>}
                         <div className="people-meta">
-                          {user.positions?.length > 0 && (
-                            <span className="people-tag">{user.positions.join(', ')}</span>
+                          {user.followersCount > 0 && (
+                            <span className="people-followers-count">{user.followersCount} followers</span>
                           )}
-                          {user.height && (
-                            <span className="people-tag">{user.height} cm</span>
-                          )}
-                          <span className="people-followers">{user.followersCount} followers</span>
                         </div>
                       </div>
                       <button
@@ -516,7 +514,7 @@ const ExplorePage = () => {
                       <p className="game-search-location">{game.location}</p>
                       <div className="game-search-footer">
                         <span className="game-search-players">
-                          {game.currentPlayersCount} / {game.maxPlayers} players
+                          {game.playersCount} / {game.maxPlayers} players
                         </span>
                         <button className="game-view-btn">View Details</button>
                       </div>

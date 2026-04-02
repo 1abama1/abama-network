@@ -275,3 +275,22 @@
   gap: 1rem;
   margin-top: 1rem;
 }
+
+.empty-tab-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  text-align: center;
+}
+
+.profile-posts .game-card {
+  margin: 0.5rem 0;
+}
+
+.tab svg {
+  vertical-align: middle;
+}

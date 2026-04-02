@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import axiosInstance from '../../api/axiosConfig';
+import ShareMenu from '../../components/Common/ShareMenu';
 import '../../components/Games/Games.css';
 
 const GameDetailsPage = () => {
@@ -117,7 +118,9 @@ const GameDetailsPage = () => {
                 </div>
 
                 <div className="hero-actions">
-                    <button className="action-circle-btn"><Share2 size={20} /></button>
+                    <ShareMenu url={`/game/${gameId}`} title={`Join the run: ${game.title} at ${game.location}`}>
+                        <button className="action-circle-btn"><Share2 size={20} /></button>
+                    </ShareMenu>
                     <button
                         className={`btn-primary hero-main-btn ${game.isRegistered ? 'registered' : ''}`}
                         disabled={isFull && !game.isRegistered}
@@ -202,7 +205,6 @@ const GameDetailsPage = () => {
                         </div>
                         <div className="location-visual">
                             <div className="v-map">
-                                <div className="radar-sweep" />
                                 <MapPin size={40} className="pulse-icon" />
                             </div>
                             <p>{game.location}</p>

@@ -63,4 +63,13 @@ public class GameController {
                 q,
                 authentication != null ? authentication.getName() : null));
     }
+
+    @GetMapping("/user/{username}")
+    public ResponseEntity<List<GameDto>> getGamesByUser(
+            @PathVariable String username,
+            Authentication authentication) {
+        return ResponseEntity.ok(gameService.getGamesByUsername(
+                username,
+                authentication != null ? authentication.getName() : null));
+    }
 }

@@ -8,7 +8,8 @@ import {
   User,
   LogOut,
   Trophy,
-  Bell
+  Bell,
+  Plus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -28,11 +29,20 @@ const Sidebar = () => {
 
       <div className="sidebar-search">
         <button 
-          className="btn-primary" 
-          style={{ width: '100%', justifyContent: 'center' }}
+          className="btn-primary post-btn" 
+          style={{ 
+            width: '100%', 
+            justifyContent: 'center', 
+            gap: '0.8rem', 
+            height: '52px',
+            borderRadius: '26px',
+            fontSize: '1.1rem',
+            fontWeight: '700'
+          }}
           onClick={() => navigate('/')}
         >
-          POST
+          <Plus size={24} />
+          <span className="post-text">POST</span>
         </button>
       </div>
 

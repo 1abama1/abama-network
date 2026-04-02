@@ -22,6 +22,7 @@ const ChatPage = () => {
     messagesByConv,
     activeConvId,
     typingByConv,
+    loading,
     setConversations,
     setActiveConv,
     prependMessages,
@@ -175,6 +176,8 @@ const ChatPage = () => {
   const typingUsers = activeConvId ? (typingByConv[activeConvId] || []) : [];
   const isTyping = typingUsers.length > 0;
   const currentMessages = activeConvId ? (messagesByConv[activeConvId] || []) : [];
+
+  if (loading) return <div className="feed-loading"><div className="basketball-spinner" /></div>;
 
   return (
     <div className="chat-container">

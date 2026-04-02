@@ -4,6 +4,7 @@ import { Heart, MessageCircle, Repeat, Share, MoreHorizontal } from 'lucide-reac
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
+import ShareMenu from '../Common/ShareMenu';
 import './Feed.css';
 
 interface PostProps {
@@ -177,7 +178,7 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
               <span className="post-user-handle" onClick={(e) => handleProfileClick(e, post.originalPost ? post.originalPost.author.username : post.author.username)} style={{ cursor: 'pointer' }}>
                 @{post.originalPost ? post.originalPost.author.username : post.author.username}
               </span>
-              <span className="dot">·</span>
+              {/* <span className="dot">·</span> */}
               <span className="post-time">
                 {(() => {
                   const rawDate = post.originalPost ? post.originalPost.createdAt : post.createdAt;
@@ -228,9 +229,14 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
                 <span>{localLikeCount}</span>
               </button>
 
-              <button className="interaction-btn share-btn">
-                <Share size={18} />
-              </button>
+              <ShareMenu
+                url={`/post/${targetPostId}`}
+                title={`Check out this post by @${post.originalPost ? post.originalPost.author.username : post.author.username}`}
+              >
+                <button className="interaction-btn share-btn">
+                  <Share size={18} />
+                </button>
+              </ShareMenu>
             </div>
           </div>
         </div>

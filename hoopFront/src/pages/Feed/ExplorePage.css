@@ -328,3 +328,73 @@
 .text-primary {
   color: var(--primary, #ff6b00);
 }
+
+.people-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.people-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text, #f0f0f0);
+}
+
+.people-bio-snippet {
+  font-size: 0.9rem;
+  color: var(--text-dim, #888);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.people-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.people-followers-count {
+  font-size: 0.8rem;
+  color: var(--primary, #ff6b00);
+  font-weight: 600;
+}
+
+.follow-btn {
+  background: var(--text, #f0f0f0);
+  color: #000;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 100px;
+  font-size: 0.9rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.follow-btn:hover {
+  background: var(--primary, #ff6b00);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.follow-btn.following {
+  background: transparent;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
+  color: var(--text, #f0f0f0);
+}
+
+.follow-btn.following:hover {
+  border-color: #ff4d4d;
+  background: rgba(255, 77, 77, 0.1);
+  color: #ff4d4d;
+}
+

@@ -5,5 +5,6 @@ public record UserSummaryDto(
         String username,
         java.util.Set<com.hoop.hoopback.entity.Position> positions,
         Double height,
-        long followersCount) implements java.io.Serializable {
+        long followersCount,
+        String bio) implements java.io.Serializable {
 }

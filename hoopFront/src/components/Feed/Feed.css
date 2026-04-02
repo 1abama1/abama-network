@@ -68,8 +68,6 @@
 }
 
 .post-btn {
-  /* This will inherit from .btn-primary if classed correctly, 
-     but let's ensure the override is clean */
   padding: 0.7rem 1.5rem;
   font-size: 0.95rem;
   min-width: 100px;

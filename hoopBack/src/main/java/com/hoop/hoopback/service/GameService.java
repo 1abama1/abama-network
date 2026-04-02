@@ -127,6 +127,17 @@ public class GameService {
                                 .collect(Collectors.toList());
         }
 
+        @Transactional(readOnly = true)
+        public List<GameDto> getGamesByUsername(String username, String currentUsername) {
+                User user = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+                User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
+                                : null;
+                return gameRegistrationRepository.findAllByUserOrderByRegisteredAtDesc(user).stream()
+                                .map(reg -> mapToDto(reg.getGame(), currentUser))
+                                .collect(Collectors.toList());
+        }
+
         private GameDto mapToDto(Game game, User currentUser) {
                 boolean isRegistered = currentUser != null
                                 && gameRegistrationRepository.existsByUserAndGame(currentUser, game);

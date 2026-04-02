@@ -15,6 +15,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
@@ -128,7 +129,7 @@ public class UserService {
                 user.getHeight(),
                 user.getWeight(),
                 user.getJump(),
-                user.getPositions(),
+                user.getPositions() != null ? new HashSet<>(user.getPositions()) : null,
                 user.getFollowersCount() != null ? Long.valueOf(user.getFollowersCount()) : 0L,
                 user.getFollowingCount() != null ? Long.valueOf(user.getFollowingCount()) : 0L,
                 isFollowing);
@@ -138,8 +139,9 @@ public class UserService {
         return new UserSummaryDto(
                 user.getId(),
                 user.getUsername(),
-                user.getPositions(),
+                user.getPositions() != null ? new HashSet<>(user.getPositions()) : null,
                 user.getHeight(),
-                user.getFollowersCount() != null ? Long.valueOf(user.getFollowersCount()) : 0L);
+                user.getFollowersCount() != null ? Long.valueOf(user.getFollowersCount()) : 0L,
+                user.getBio());
     }
 }

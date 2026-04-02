@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
-import { Edit2, Award, UserPlus, UserMinus } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Edit2, Award, UserPlus, UserMinus, Lock, Gamepad2, Calendar } from 'lucide-react';
 import axiosInstance from '../../api/axiosConfig';
 import { useAuth } from '../../context/AuthContext';
 import PostCard from '../../components/Feed/PostCard';
+import GameCard from '../../components/Games/GameCard';
 import StatRing from '../../components/Profile/StatRing';
 import EditProfileModal from '../../components/Profile/EditProfileModal';
 import '../../components/Profile/Profile.css';
@@ -14,27 +15,27 @@ const ProfilePage = () => {
   const { user: currentUser } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
+  const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('posts');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [gamesLoaded, setGamesLoaded] = useState(false);
 
   const isOwnProfile = currentUser?.username === username;
 
   const fetchProfileData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch Profile Data (Critical)
       const profileRes = await axiosInstance.get(`/users/profile/${username}`);
       setProfile(profileRes.data);
       
-      // 2. Fetch Posts Data (Non-critical)
       try {
         const postsRes = await axiosInstance.get(`/posts/user/${username}`);
         setPosts(postsRes.data.content || []);
       } catch (postError) {
         console.error('Failed to fetch user posts', postError);
-        setPosts([]); // Gracefully handle missing posts
+        setPosts([]);
       }
     } catch (error) {
       console.error('Failed to fetch profile', error);
@@ -44,10 +45,44 @@ const ProfilePage = () => {
     }
   }, [username]);
 
+  const fetchGames = useCallback(async () => {
+    if (gamesLoaded) return;
+    try {
+      const res = await axiosInstance.get(`/games/user/${username}`);
+      setGames(res.data || []);
+      setGamesLoaded(true);
+    } catch (error) {
+      console.error('Failed to fetch user games', error);
+      setGames([]);
+    }
+  }, [username, gamesLoaded]);
+
+  const handleGameRegister = async (gameId: string | number) => {
+    const game = games.find((g: any) => g.id === gameId);
+    if (!game) return;
+    
+    try {
+      if (game.isRegistered) {
+        await axiosInstance.delete(`/games/${gameId}/register`);
+      } else {
+        await axiosInstance.post(`/games/${gameId}/register`);
+      }
+      setGamesLoaded(false);
+      fetchGames();
+    } catch (error) {
+      console.error('Game registration failed', error);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'games') {
+      fetchGames();
+    }
+  }, [activeTab, fetchGames]);
+
   const handleFollow = async () => {
     if (isActionLoading || !profile) return;
     
-    // OPTIMISTIC UPDATE
     const wasFollowing = profile.isFollowing;
     const oldFollowersCount = profile.followersCount;
     
@@ -64,10 +99,8 @@ const ProfilePage = () => {
       } else {
         await axiosInstance.post(`/users/follow/${username}`);
       }
-      // Silently sync with backend to ensure consistency
       fetchProfileData(); 
     } catch (error) {
-      // ROLLBACK on failure
       setProfile((prev: any) => ({
         ...prev,
         isFollowing: wasFollowing,
@@ -81,7 +114,11 @@ const ProfilePage = () => {
   };
 
   useEffect(() => {
-    if (username) fetchProfileData();
+    if (username) {
+      fetchProfileData();
+      setGamesLoaded(false);
+      setActiveTab('posts');
+    }
   }, [username, fetchProfileData]);
 
   const handleProfileUpdate = (updatedProfile: any) => {
@@ -178,17 +215,21 @@ const ProfilePage = () => {
           Posts
         </button>
         <button 
-          className={`tab ${activeTab === 'media' ? 'active' : ''}`}
-          onClick={() => setActiveTab('media')}
+          className={`tab ${activeTab === 'games' ? 'active' : ''}`}
+          onClick={() => setActiveTab('games')}
         >
-          Media
+          <Gamepad2 size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+          Games
         </button>
-        <button 
-          className={`tab ${activeTab === 'likes' ? 'active' : ''}`}
-          onClick={() => setActiveTab('likes')}
-        >
-          Likes
-        </button>
+        {isOwnProfile && (
+          <button 
+            className={`tab ${activeTab === 'likes' ? 'active' : ''}`}
+            onClick={() => setActiveTab('likes')}
+          >
+            <Lock size={14} style={{ marginRight: '6px', verticalAlign: 'middle', opacity: 0.6 }} />
+            Likes
+          </button>
+        )}
       </div>
 
       <div className="profile-posts">
@@ -200,6 +241,45 @@ const ProfilePage = () => {
               onUpdate={fetchProfileData} 
             />
           ))}
+
+          {activeTab === 'posts' && posts.length === 0 && (
+            <motion.div 
+              className="empty-tab-state"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <p>No posts yet</p>
+            </motion.div>
+          )}
+
+          {activeTab === 'games' && games.map((game: any) => (
+            <GameCard 
+              key={game.id} 
+              game={game} 
+              onRegister={handleGameRegister}
+            />
+          ))}
+
+          {activeTab === 'games' && games.length === 0 && gamesLoaded && (
+            <motion.div 
+              className="empty-tab-state"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Calendar size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+              <p>{isOwnProfile ? "You haven't joined any games yet" : "This baller hasn't joined any games yet"}</p>
+            </motion.div>
+          )}
+
+          {activeTab === 'likes' && isOwnProfile && (
+            <motion.div 
+              className="empty-tab-state"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <p>Liked posts coming soon</p>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 

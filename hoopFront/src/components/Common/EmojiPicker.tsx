@@ -31,6 +31,22 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, onClose }) => {
         })).filter(cat => cat.emojis.length > 0);
     }, [search]);
 
+    const handleScroll = () => {
+        if (!scrollRef.current) return;
+        const scrollPosition = scrollRef.current.scrollTop;
+
+        let currentCat = activeCategory;
+        for (const cat of EMOJI_DATA) {
+            const element = document.getElementById(`category-${cat.category}`);
+            if (element && element.offsetTop - 20 <= scrollPosition) {
+                currentCat = cat.category;
+            }
+        }
+        if (currentCat !== activeCategory) {
+            setActiveCategory(currentCat);
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -75,7 +91,7 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, onClose }) => {
                 ))}
             </div>
 
-            <div className="emoji-scroll-area" ref={scrollRef}>
+            <div className="emoji-scroll-area" ref={scrollRef} onScroll={handleScroll}>
                 {filteredData.map(cat => (
                     <div key={cat.category} id={`category-${cat.category}`} className="emoji-section">
                         <h4 className="emoji-section-title">{cat.category}</h4>
