@@ -117,6 +117,35 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
     }
   };
 
+  const handleProfileClick = (e: React.MouseEvent, username: string) => {
+    e.stopPropagation();
+    navigate(`/profile/${username}`);
+  };
+
+  const renderContentWithMentions = (content: string) => {
+    if (!content) return null;
+    const parts = content.split(/(@[a-zA-Z0-9_]+)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('@')) {
+        const username = part.substring(1);
+        return (
+          <span
+            key={index}
+            className="mention-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/profile/${username}`);
+            }}
+            style={{ color: 'var(--primary)', cursor: 'pointer', position: 'relative', zIndex: 10 }}
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <>
       <motion.div
@@ -134,7 +163,7 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
         )}
 
         <div className="post-main-content">
-          <div className="post-avatar">
+          <div className="post-avatar" onClick={(e) => handleProfileClick(e, post.originalPost ? post.originalPost.author.username : post.author.username)} style={{ cursor: 'pointer' }}>
             <div className="avatar-placeholder">
               {(post.originalPost ? post.originalPost.author.username : post.author.username).charAt(0).toUpperCase()}
             </div>
@@ -142,10 +171,10 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
 
           <div className="post-content-container">
             <div className="post-user-info">
-              <span className="post-user-name">
+              <span className="post-user-name" onClick={(e) => handleProfileClick(e, post.originalPost ? post.originalPost.author.username : post.author.username)} style={{ cursor: 'pointer' }}>
                 {post.originalPost ? post.originalPost.author.displayName || post.originalPost.author.username : post.author.displayName || post.author.username}
               </span>
-              <span className="post-user-handle">
+              <span className="post-user-handle" onClick={(e) => handleProfileClick(e, post.originalPost ? post.originalPost.author.username : post.author.username)} style={{ cursor: 'pointer' }}>
                 @{post.originalPost ? post.originalPost.author.username : post.author.username}
               </span>
               <span className="dot">·</span>
@@ -160,7 +189,7 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
             </div>
 
             <p className="post-text">
-              {post.originalPost ? post.originalPost.content : post.content}
+              {renderContentWithMentions(post.originalPost ? post.originalPost.content : post.content)}
             </p>
 
             {post.repostCaption && (

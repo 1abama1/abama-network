@@ -15,6 +15,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [recommendedUsers, setRecommendedUsers] = useState<any[]>([]);
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchSidebarData = async () => {
@@ -31,6 +32,13 @@ const Layout = ({ children }: LayoutProps) => {
     };
     fetchSidebarData();
   }, []);
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      navigate(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
 
   return (
     <div className="layout-container">
@@ -58,11 +66,9 @@ const Layout = ({ children }: LayoutProps) => {
           <input 
             type="text" 
             placeholder="Search the court..." 
-            onClick={() => navigate('/explore')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') navigate('/explore');
-            }}
-            style={{ cursor: 'pointer' }}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearch}
           />
         </div>
 

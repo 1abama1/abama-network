@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, TrendingUp, Users, FileText, X, UserCheck } from 'lucide-react';
 import { Calendar, LayoutGrid } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
 import PostCardFeed from '../../components/Feed/PostCard';
 import '../../components/Feed/Feed.css';
@@ -29,9 +29,12 @@ interface UserSummary {
 
 const ExplorePage = () => {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>('trending');
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryParam = searchParams.get('q') || '';
+  
+  const [tab, setTab] = useState<Tab>(queryParam ? 'top' : 'trending');
+  const [query, setQuery] = useState(queryParam);
+  const [debouncedQuery, setDebouncedQuery] = useState(queryParam);
 
   // Trending feed state
   const [trendingPosts, setTrendingPosts] = useState<any[]>([]);
@@ -40,6 +43,14 @@ const ExplorePage = () => {
   // People search state
   const [people, setPeople] = useState<UserSummary[]>([]);
   const [peopleLoading, setPeopleLoading] = useState(false);
+
+  // Synchronize internal query state with URL when it changes
+  useEffect(() => {
+    if (queryParam !== query) {
+      setQuery(queryParam);
+    }
+  }, [queryParam]);
+
   const [followingSet, setFollowingSet] = useState<Set<string>>(new Set());
 
   // Posts search state
@@ -60,11 +71,19 @@ const ExplorePage = () => {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Debounce query
+  // Debounce query and sync to URL
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 350);
+    const timer = setTimeout(() => {
+      const trimmed = query.trim();
+      setDebouncedQuery(trimmed);
+      if (trimmed) {
+        setSearchParams({ q: trimmed }, { replace: true });
+      } else {
+        setSearchParams({}, { replace: true });
+      }
+    }, 350);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, setSearchParams]);
 
   // When query becomes non-empty, auto-switch to top tab
   useEffect(() => {

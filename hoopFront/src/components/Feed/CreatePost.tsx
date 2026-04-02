@@ -45,7 +45,6 @@ const CreatePost = ({ onPostCreated, onOptimisticPost }: {
     const newContent = content.substring(0, start) + emoji + content.substring(end);
 
     setContent(newContent);
-    setShowEmojiPicker(false);
 
     // Set focus back and move cursor
     setTimeout(() => {

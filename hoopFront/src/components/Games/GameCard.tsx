@@ -31,6 +31,32 @@ const GameCard = ({ game, onRegister }: GameProps) => {
     navigate(`/game/${game.id}`);
   };
 
+  const handleProfileClick = (e: React.MouseEvent, username: string) => {
+    e.stopPropagation();
+    navigate(`/profile/${username}`);
+  };
+
+  const renderContentWithMentions = (content: string) => {
+    if (!content) return null;
+    const parts = content.split(/(@[a-zA-Z0-9_]+)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('@')) {
+        const username = part.substring(1);
+        return (
+          <span
+            key={index}
+            className="mention-link"
+            onClick={(e) => handleProfileClick(e, username)}
+            style={{ color: 'var(--primary)', cursor: 'pointer', position: 'relative', zIndex: 10 }}
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <motion.div
       className="game-card glass"
@@ -47,7 +73,7 @@ const GameCard = ({ game, onRegister }: GameProps) => {
               <MapPin size={14} /> {game.location}
             </span>
             <span className="header-divider">•</span>
-            <span className="game-creator">
+            <span className="game-creator" onClick={(e) => handleProfileClick(e, game.creator.username)} style={{ cursor: 'pointer' }}>
               <User size={14} /> @{game.creator.username}
             </span>
           </div>
@@ -70,7 +96,7 @@ const GameCard = ({ game, onRegister }: GameProps) => {
         </div>
       </div>
 
-      <p className="game-description">{game.description}</p>
+      <p className="game-description">{renderContentWithMentions(game.description)}</p>
 
       <div className="game-card-footer">
         <div className="player-progress-container">

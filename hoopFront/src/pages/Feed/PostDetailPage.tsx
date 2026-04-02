@@ -132,15 +132,35 @@ const PostDetailPage = () => {
         ) : (
           comments.map((comment) => (
             <div key={comment.id} className="detail-comment-card glass">
-              <div className="comment-avatar">
+              <div className="comment-avatar" onClick={() => navigate(`/profile/${comment.author.username}`)} style={{ cursor: 'pointer' }}>
                 {comment.author.username.charAt(0).toUpperCase()}
               </div>
               <div className="comment-content-wrapper">
                 <div className="comment-header-row">
-                  <span className="comment-author-name">@{comment.author.username}</span>
+                  <span className="comment-author-name" onClick={() => navigate(`/profile/${comment.author.username}`)} style={{ cursor: 'pointer' }}>@{comment.author.username}</span>
                   <span className="comment-time">{formatDistanceToNow(new Date(comment.createdAt.endsWith('Z') ? comment.createdAt : comment.createdAt + 'Z'), { addSuffix: true })}</span>
                 </div>
-                <p className="comment-text">{comment.content}</p>
+                <p className="comment-text">
+                  {comment.content.split(/(@[a-zA-Z0-9_]+)/g).map((part: string, index: number) => {
+                    if (part.startsWith('@')) {
+                      const username = part.substring(1);
+                      return (
+                        <span
+                          key={index}
+                          className="mention-link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${username}`);
+                          }}
+                          style={{ color: 'var(--primary)', cursor: 'pointer', position: 'relative', zIndex: 10 }}
+                        >
+                          {part}
+                        </span>
+                      );
+                    }
+                    return part;
+                  })}
+                </p>
               </div>
             </div>
           ))
