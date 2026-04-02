@@ -16,7 +16,7 @@ class WebSocketService {
             }
 
             this.client = new Client({
-                webSocketFactory: () => new SockJS('http://localhost:8080/ws') as WebSocket,
+                webSocketFactory: () => new SockJS('/ws') as WebSocket,
                 connectHeaders: { Authorization: `Bearer ${token}` },
                 reconnectDelay: 5000,
                 onConnect: () => {
