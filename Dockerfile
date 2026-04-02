@@ -22,6 +22,5 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=backend-builder /build-backend/target/*.jar app.jar
 
-EXPOSE 8080
-# Force timezone to UTC
-ENTRYPOINT ["java", "-Duser.timezone=UTC", "-jar", "app.jar"]
+# Use -Xmx to stay within Render's 512MB limit
+ENTRYPOINT ["java", "-Xmx384m", "-Xss512k", "-Duser.timezone=UTC", "-jar", "app.jar"]
