@@ -42,4 +42,13 @@ public class Post {
     @OneToMany(mappedBy = "originalPost", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Repost> reposts = new ArrayList<>();
+
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(COUNT(l.id), 0) FROM likes l WHERE l.post_id = id)")
+    private Long likesCount;
+
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(COUNT(c.id), 0) FROM comments c WHERE c.post_id = id)")
+    private Long commentsCount;
+
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(COUNT(r.id), 0) FROM reposts r WHERE r.original_post_id = id)")
+    private Long repostsCount;
 }

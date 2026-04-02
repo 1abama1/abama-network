@@ -52,6 +52,7 @@ public class User implements UserDetails {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_positions", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.BatchSize(size = 50)
     private Set<Position> positions;
 
     @ManyToMany
@@ -61,14 +62,19 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "follower_id")
     )
     @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 50)
     private Set<User> followers = new HashSet<>();
 
     @ManyToMany(mappedBy = "followers")
     @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 50)
     private Set<User> following = new HashSet<>();
 
     @org.hibernate.annotations.Formula("(SELECT count(1) FROM user_followers uf WHERE uf.user_id = id)")
     private Integer followersCount;
+
+    @org.hibernate.annotations.Formula("(SELECT count(1) FROM user_followers uf WHERE uf.follower_id = id)")
+    private Integer followingCount;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

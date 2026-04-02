@@ -129,8 +129,8 @@ public class UserService {
                 user.getWeight(),
                 user.getJump(),
                 user.getPositions(),
-                userRepository.countFollowersByUserId(user.getId()),
-                userRepository.countFollowingByUserId(user.getId()),
+                user.getFollowersCount() != null ? Long.valueOf(user.getFollowersCount()) : 0L,
+                user.getFollowingCount() != null ? Long.valueOf(user.getFollowingCount()) : 0L,
                 isFollowing);
     }
 
@@ -140,6 +140,6 @@ public class UserService {
                 user.getUsername(),
                 user.getPositions(),
                 user.getHeight(),
-                userRepository.countFollowersByUserId(user.getId()));
+                user.getFollowersCount() != null ? Long.valueOf(user.getFollowersCount()) : 0L);
     }
 }

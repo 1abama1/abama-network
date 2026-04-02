@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Service
@@ -142,29 +144,26 @@ public class PostService {
                 List<User> following = userRepository.findFollowingByUsername(username);
                 following.add(user); // Include own posts
 
-                return postRepository.findAllByAuthorInOrderByCreatedAtDesc(following, pageable)
-                                .map(post -> mapToDto(post, user));
+                Page<Post> postsPage = postRepository.findAllByAuthorInOrderByCreatedAtDesc(following, pageable);
+                return mapToDtoPage(postsPage, user);
         }
 
         public Page<PostDto> getGlobalFeed(String currentUsername, Pageable pageable) {
                 User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
                                 : null;
-                return postRepository.findAllByOrderByCreatedAtDesc(pageable)
-                                .map(post -> mapToDto(post, currentUser));
+                return mapToDtoPage(postRepository.findAllByOrderByCreatedAtDesc(pageable), currentUser);
         }
 
         public Page<PostDto> getUserPosts(String username, String currentUsername, Pageable pageable) {
                 User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
                                 : null;
-                return postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username, pageable)
-                                .map(post -> mapToDto(post, currentUser));
+                return mapToDtoPage(postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username, pageable), currentUser);
         }
 
         public Page<PostDto> searchPosts(String q, String currentUsername, Pageable pageable) {
                 User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
                                 : null;
-                return postRepository.searchByContent(q, pageable)
-                                .map(post -> mapToDto(post, currentUser));
+                return mapToDtoPage(postRepository.searchByContent(q, pageable), currentUser);
         }
 
         public List<CommentDto> getPostComments(Long postId) {
@@ -183,19 +182,44 @@ public class PostService {
                 return mapToDto(post, currentUser);
         }
 
+        private Page<PostDto> mapToDtoPage(Page<Post> postsPage, User currentUser) {
+                if (postsPage.isEmpty()) {
+                        return postsPage.map(post -> mapToDtoWithCache(post, currentUser, false, false));
+                }
+
+                Set<Long> likedPostIds = Collections.emptySet();
+                Set<Long> repostedPostIds = Collections.emptySet();
+
+                if (currentUser != null) {
+                        List<Long> postIds = postsPage.getContent().stream().map(Post::getId).collect(Collectors.toList());
+                        likedPostIds = likeRepository.findPostIdsByUserIdAndPostIdIn(currentUser.getId(), postIds);
+                        repostedPostIds = repostRepository.findOriginalPostIdsByUserIdAndOriginalPostIdIn(currentUser.getId(), postIds);
+                }
+
+                final Set<Long> finalLiked = likedPostIds;
+                final Set<Long> finalReposted = repostedPostIds;
+
+                return postsPage.map(post -> mapToDtoWithCache(post, currentUser, 
+                                finalLiked.contains(post.getId()), finalReposted.contains(post.getId())));
+        }
+
         private PostDto mapToDto(Post post, User currentUser) {
                 boolean isLiked = currentUser != null && likeRepository.existsByUserAndPost(currentUser, post);
                 boolean isReposted = currentUser != null
                                 && repostRepository.existsByUserAndOriginalPost(currentUser, post);
 
+                return mapToDtoWithCache(post, currentUser, isLiked, isReposted);
+        }
+
+        private PostDto mapToDtoWithCache(Post post, User currentUser, boolean isLiked, boolean isReposted) {
                 return new PostDto(
                                 post.getId(),
                                 mapUserToSummaryDto(post.getAuthor()),
                                 post.getContent(),
                                 post.getCreatedAt(),
-                                likeRepository.countByPost(post),
-                                commentRepository.countByPost(post),
-                                repostRepository.countByOriginalPost(post),
+                                post.getLikesCount() != null ? post.getLikesCount() : 0L,
+                                post.getCommentsCount() != null ? post.getCommentsCount() : 0L,
+                                post.getRepostsCount() != null ? post.getRepostsCount() : 0L,
                                 isLiked,
                                 isReposted,
                                 null, // Not a repost
