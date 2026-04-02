@@ -36,7 +36,7 @@
   --glass-blur: blur(20px);
 
   /* Layout & Geometry */
-  --sidebar-width: 280px;
+  --sidebar-width: 250px;
   --max-width: 1400px;
   --radius-sm: 8px;
   --radius-md: 14px;

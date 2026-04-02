@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from '../Navigation/Sidebar';
 import axiosInstance from '../../api/axiosConfig';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Trophy, Users } from 'lucide-react';
+import { UserPlus, Trophy, Users, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import './Layout.css';
 
 interface LayoutProps {
@@ -13,6 +14,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [trendingGames, setTrendingGames] = useState<any[]>([]);
   const [recommendedUsers, setRecommendedUsers] = useState<any[]>([]);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     const fetchSidebarData = async () => {
@@ -32,6 +34,19 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="layout-container">
+      {/* Mobile Top Header */}
+      <header className="mobile-header">
+        <div className="mobile-logo">
+          <Trophy size={24} color="var(--primary)" />
+          <span className="logo-text">HoopConnect</span>
+        </div>
+        <div className="mobile-header-actions">
+          <button className="mobile-logout-btn" onClick={logout}>
+            <LogOut size={20} />
+          </button>
+        </div>
+      </header>
+      
       <Sidebar />
       <main className="main-content">
         <div className="content-inner">
@@ -40,7 +55,15 @@ const Layout = ({ children }: LayoutProps) => {
       </main>
       <aside className="right-sidebar">
         <div className="search-bar-container glass">
-          <input type="text" placeholder="Search the court..." />
+          <input 
+            type="text" 
+            placeholder="Search the court..." 
+            onClick={() => navigate('/explore')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') navigate('/explore');
+            }}
+            style={{ cursor: 'pointer' }}
+          />
         </div>
 
         <div className="sidebar-section trending-games glass">

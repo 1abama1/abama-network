@@ -14,7 +14,7 @@ const LoginPage = () => {
   const [identifier, setIdentifier] = useState(location.state?.identifier || '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(location.state?.message || '');
+  const [success] = useState(location.state?.message || '');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
