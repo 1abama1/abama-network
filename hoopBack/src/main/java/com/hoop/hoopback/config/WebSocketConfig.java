@@ -29,7 +29,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${app.cors.allowed-origins:http://localhost:5174,http://localhost:80,http://localhost}")
+    @Value("${app.cors.allowed-origins:http://localhost:5174,http://localhost:80,http://localhost,https://abama-network.onrender.com}")
     private String[] allowedOrigins;
 
     private final JwtService jwtService;

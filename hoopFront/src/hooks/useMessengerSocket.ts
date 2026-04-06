@@ -8,8 +8,19 @@ import type {
     PresenceEvent, MessageAckEvent, MessageDeletedEvent,
 } from '../types/messenger';
 
-const WS_URL = 'http://localhost:8080/ws';
-const PING_MS = 30_000; // heartbeat каждые 30 сек
+const getWsUrl = () => {
+    const isProd = import.meta.env.PROD;
+    if (isProd) {
+        // In production (e.g. Docker/Nginx), use same host but /ws path
+        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        return `${protocol}//${window.location.host}/ws`;
+    }
+    // Development fallback
+    return 'http://localhost:8080/ws';
+};
+
+const WS_URL = getWsUrl();
+const PING_MS = 30_000;
 
 export function useMessengerSocket(token: string | null) {
     const clientRef = useRef<Client | null>(null);
@@ -71,22 +82,35 @@ export function useMessengerSocket(token: string | null) {
             reconnectDelay: 5_000,
 
             onConnect: () => {
+                console.log('[WS] Connected to Stomp');
                 subscribe(client);
 
                 // Presence heartbeat
                 pingRef.current = setInterval(() => {
-                    client.publish({ destination: '/app/presence.ping' });
+                    if (client.connected) {
+                        client.publish({ destination: '/app/presence.ping' });
+                    }
                 }, PING_MS);
             },
 
             onDisconnect: () => {
+                console.log('[WS] Disconnected');
                 subRefs.current = [];
                 if (pingRef.current) clearInterval(pingRef.current);
             },
 
             onStompError: (frame) => {
                 console.error('[WS] STOMP error', frame.headers['message']);
+                console.error('[WS] Details:', frame.body);
             },
+
+            onWebSocketClose: () => {
+                console.log('[WS] WebSocket closed');
+            },
+
+            onWebSocketError: (event) => {
+                console.error('[WS] WebSocket error', event);
+            }
         });
 
         client.activate();

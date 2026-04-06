@@ -14,12 +14,13 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  app:
     build:
-      context: ./hoopBack
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+      - "80:8080" # Map 80 to 8080 for convenience
     env_file:
       - .env
     environment:
@@ -33,15 +34,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-
-  frontend:
-    build:
-      context: ./hoopFront
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
 
 volumes:
   redis-data:

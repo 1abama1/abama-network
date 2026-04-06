@@ -103,6 +103,14 @@ const ChatPage = () => {
     }, 2000);
   };
 
+  /** Scroll to bottom */
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    // delay to allow render
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+    }, 50);
+  };
+
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const content = newMessage.trim();
@@ -177,6 +185,13 @@ const ChatPage = () => {
   const isTyping = typingUsers.length > 0;
   const currentMessages = activeConvId ? (messagesByConv[activeConvId] || []) : [];
 
+  // Scroll on initial messages load or when new messages arrive
+  useEffect(() => {
+    if (activeConvId && currentMessages.length > 0) {
+      scrollToBottom('smooth');
+    }
+  }, [activeConvId, currentMessages.length]);
+
   if (loading) return <div className="feed-loading"><div className="basketball-spinner" /></div>;
 
   return (
@@ -195,7 +210,7 @@ const ChatPage = () => {
           </div>
         </div>
         <div className="chats-list">
-          {mutuals.length > 0 && !searchTerm && (
+          {Array.isArray(mutuals) && mutuals.length > 0 && !searchTerm && (
             <div className="mutuals-bar">
               <span className="section-title">Active Now</span>
               <div className="mutuals-scroll">
@@ -217,8 +232,8 @@ const ChatPage = () => {
             </div>
           )}
 
-          {conversations
-            .filter(c => c.partnerUsername.toLowerCase().includes(searchTerm.toLowerCase()))
+          {Array.isArray(conversations) && conversations
+            .filter(c => c.partnerUsername?.toLowerCase().includes(searchTerm.toLowerCase()))
             .map((chat) => (
               <motion.div
                 key={chat.id}
@@ -257,7 +272,7 @@ const ChatPage = () => {
 
             <div className="messages-area">
               <AnimatePresence>
-                {currentMessages.map((msg, idx) => (
+                {Array.isArray(currentMessages) && currentMessages.map((msg, idx) => (
                   <motion.div
                     key={msg.id || idx}
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
