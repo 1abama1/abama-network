@@ -18,7 +18,7 @@ COPY --from=frontend-builder /build-frontend/dist ./src/main/resources/static/
 RUN mvn clean package -DskipTests
 
 # Stage 3: Runner
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=backend-builder /build-backend/target/*.jar app.jar
 
