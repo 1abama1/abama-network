@@ -33,6 +33,7 @@ services:
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
+      - PORT=8080
     depends_on:
       redis:
         condition: service_healthy
