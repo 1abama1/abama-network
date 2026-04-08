@@ -273,7 +273,7 @@ const ExplorePage = () => {
                         <span>People</span>
                         <button className="see-more-btn" onClick={() => setTab('people')}>See all</button>
                       </div>
-                      <div className="people-list">
+                      <div className="people-grid-mini">
                         {topResults.users.map(user => (
                           <div key={user.id} className="people-card-mini glass" onClick={() => navigate(`/profile/${user.username}`)}>
                             <div className="people-avatar-mini">{user.username.charAt(0).toUpperCase()}</div>

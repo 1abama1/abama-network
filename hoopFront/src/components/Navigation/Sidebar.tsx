@@ -33,7 +33,7 @@ const Sidebar = () => {
           onClick={() => navigate('/')}
         >
           <Plus size={22} strokeWidth={3} />
-          <span className="post-title">POST</span>
+          <span className="sidebar-post-title">POST</span>
         </button>
       </div>
 

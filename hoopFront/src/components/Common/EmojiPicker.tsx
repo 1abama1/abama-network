@@ -75,7 +75,7 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, onClose }) => {
                 {EMOJI_DATA.map(cat => (
                     <button
                         key={cat.category}
-                        className={`category-dot ${activeCategory === cat.category ? 'active' : ''}`}
+                        className={`category-icon ${activeCategory === cat.category ? 'active' : ''}`}
                         title={cat.category}
                         onClick={() => {
                             setActiveCategory(cat.category);
@@ -87,7 +87,9 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, onClose }) => {
                                 });
                             }
                         }}
-                    />
+                    >
+                        {cat.emojis[0]}
+                    </button>
                 ))}
             </div>
 

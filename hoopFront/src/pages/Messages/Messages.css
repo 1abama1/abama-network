@@ -2,7 +2,8 @@
   display: flex;
   height: calc(100vh - 120px);
   margin: 0 auto;
-  max-width: var(--max-width);
+  max-width: 1200px;
+  width: 100%;
   gap: 20px;
   padding: 0 20px;
 }
@@ -140,6 +141,69 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* --- Active Now (Mutuals) styling --- */
+.mutuals-bar {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(255, 107, 0, 0.1); /* separator */
+}
+
+.section-title {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.75rem;
+  padding: 0 0.5rem;
+}
+
+.mutuals-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+}
+
+.mutuals-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mutual-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.mutual-avatar-wrap {
+  position: relative;
+}
+
+.mutual-avatar-wrap .status-ring {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  background: var(--accent-green);
+  border: 2px solid var(--bg-dark);
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.mutual-name {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Chat Main Overhaul */
