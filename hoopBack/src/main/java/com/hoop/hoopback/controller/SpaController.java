@@ -12,10 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class SpaController {
 
     @RequestMapping(value = {
-            "{path:(?!api|ws|static|assets)[^\\.]*}",
+            "/{path:(?!api|ws|static|assets)[^\\.]*}",
             "/**/{path:(?!api|ws|static|assets)[^\\.]*}"
     })
     public String forward() {
+        // Exclude API, WebSocket, and static assets from being caught by the SPA forwarder
+        // Note: Spring Security will handle the actual access control, but we must
+        // ensure we don't accidentally forward /api calls to index.html
         return "forward:/index.html";
     }
 }
