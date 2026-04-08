@@ -195,7 +195,7 @@ const ChatPage = () => {
   if (loading) return <div className="feed-loading"><div className="basketball-spinner" /></div>;
 
   return (
-    <div className="chat-container">
+    <div className={`chat-container ${activeConvId ? 'chat-active' : ''}`}>
       <div className="chat-sidebar glass">
         <div className="chat-sidebar-header">
           <h2>Messages</h2>
@@ -261,9 +261,15 @@ const ChatPage = () => {
           <>
             <header className="chat-header">
               <div className="chat-header-info">
-                <MapPin size={20} className="text-primary" />
+                <button 
+                  className="mobile-back-btn" 
+                  onClick={() => setActiveConv(null)}
+                >
+                  ←
+                </button>
+                <MapPin size={20} className="text-primary hide-mobile" />
                 <h3>{activeChat?.partnerUsername || targetPartner}</h3>
-                {activeChat?.partnerOnline && <span className="status-ring" style={{ position: 'static', marginLeft: 10 }} />}
+                {activeChat?.partnerOnline && <span className="status-ring online-dot" />}
               </div>
               <div className="chat-header-actions">
                 <motion.button whileHover={{ scale: 1.1 }} className="action-circle-btn small"><Info size={18} /></motion.button>

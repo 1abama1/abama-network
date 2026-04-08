@@ -35,6 +35,16 @@
   --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
   --glass-blur: blur(20px);
 
+  /* Chat Bubble Gradients */
+  --bubble-own: linear-gradient(135deg, var(--primary), #FF8533);
+  --bubble-other: rgba(255, 255, 255, 0.05);
+
+  /* Layering Hierarchy */
+  --z-header: 1000;
+  --z-mobile-nav: 1100;
+  --z-modal: 2000;
+  --z-dropdown: 1500;
+
   /* Layout & Geometry */
   --sidebar-width: 250px;
   --max-width: 1400px;
