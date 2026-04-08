@@ -296,8 +296,39 @@
   box-shadow: 0 0 10px var(--accent-green);
 }
 
-/* Responsive Mobile Logic */
-@media (max-width: 768px) {
+/* Empty State Centering */
+.messenger-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 107, 0, 0.05);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 107, 0, 0.1);
+}
+
+.messenger-empty h2 {
+  font-size: 2rem !important;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+/* Responsive Mobile Logic - Trigger at 1100px */
+@media (max-width: 1100px) {
   .chat-container {
     padding: 0;
     height: calc(100vh - 70px);
@@ -311,6 +342,7 @@
     border: none;
   }
 
+  /* Single Pane View */
   .chat-main {
     position: fixed;
     top: 0;
@@ -329,12 +361,12 @@
   }
 
   .mobile-back-btn {
-    display: block;
-    margin-right: 10px;
+    display: block !important;
+    margin-right: 15px;
   }
 
   .hide-mobile {
-    display: none;
+    display: none !important;
   }
 
   .message-wrapper {
@@ -350,15 +382,9 @@
   }
 }
 
-/* Tablet view from original */
-@media (min-width: 769px) and (max-width: 1024px) {
+/* Sidebar behavior for medium screens */
+@media (min-width: 1101px) and (max-width: 1300px) {
   .chat-sidebar {
-    width: 80px;
-  }
-  .chat-info, .chat-sidebar-header h2, .search-chats span {
-    display: none;
-  }
-  .chat-item {
-    justify-content: center;
+    width: 300px;
   }
 }
