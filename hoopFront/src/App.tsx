@@ -13,6 +13,7 @@ import GameDetailsPage from './pages/Games/GameDetailsPage';
 import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import ChatPage from './pages/Messages/ChatPage';
+import NotFoundPage from './pages/NotFoundPage';
 import Layout from './components/Layout/Layout';
 import './index.css';
 
@@ -116,7 +117,7 @@ function App() {
           />
 
           {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AuthProvider>
     </Router>

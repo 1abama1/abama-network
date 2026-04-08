@@ -6,16 +6,17 @@ import axiosInstance from '../../api/axiosConfig';
 interface CreateGameModalProps {
   onClose: () => void;
   onGameCreated: () => void;
+  editGame?: any; // Added for editing
 }
 
-const CreateGameModal = ({ onClose, onGameCreated }: CreateGameModalProps) => {
+const CreateGameModal = ({ onClose, onGameCreated, editGame }: CreateGameModalProps) => {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    location: '',
-    dateTime: '',
-    minPlayers: 2,
-    maxPlayers: 10
+    title: editGame?.title || '',
+    description: editGame?.description || '',
+    location: editGame?.location || '',
+    dateTime: editGame?.dateTime ? editGame.dateTime.split('.')[0] : '', // Format for datetime-local
+    minPlayers: editGame?.minPlayers || 2,
+    maxPlayers: editGame?.maxPlayers || 10
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -26,11 +27,15 @@ const CreateGameModal = ({ onClose, onGameCreated }: CreateGameModalProps) => {
     setError('');
 
     try {
-      await axiosInstance.post('/games', formData);
+      if (editGame) {
+        await axiosInstance.put(`/games/${editGame.id}`, formData);
+      } else {
+        await axiosInstance.post('/games', formData);
+      }
       onGameCreated();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create game');
+      setError(err.response?.data?.message || `Failed to ${editGame ? 'update' : 'create'} game`);
     } finally {
       setLoading(false);
     }
@@ -46,7 +51,7 @@ const CreateGameModal = ({ onClose, onGameCreated }: CreateGameModalProps) => {
         style={{ maxWidth: '600px' }}
       >
         <div className="modal-header">
-          <h3>Schedule a Run</h3>
+          <h3>{editGame ? 'Edit Game Intel' : 'Schedule a Run'}</h3>
           <button className="close-btn" onClick={onClose}><X size={20} /></button>
         </div>
 
@@ -120,7 +125,7 @@ const CreateGameModal = ({ onClose, onGameCreated }: CreateGameModalProps) => {
               Cancel
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Scheduling...' : <><Save size={18} /> Schedule Game</>}
+              {loading ? (editGame ? 'Updating...' : 'Scheduling...') : <><Save size={18} /> {editGame ? 'Save Changes' : 'Schedule Game'}</>}
             </button>
           </div>
         </form>

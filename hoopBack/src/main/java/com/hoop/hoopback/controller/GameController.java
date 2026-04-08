@@ -25,6 +25,20 @@ public class GameController {
         return ResponseEntity.ok(gameService.createGame(authentication.getName(), request));
     }
 
+    @PutMapping("/{gameId}")
+    public ResponseEntity<GameDto> updateGame(
+            @PathVariable Long gameId,
+            @Valid @RequestBody CreateGameRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(gameService.updateGame(gameId, request, authentication.getName()));
+    }
+
+    @DeleteMapping("/{gameId}")
+    public ResponseEntity<Void> deleteGame(@PathVariable Long gameId, Authentication authentication) {
+        gameService.deleteGame(gameId, authentication.getName());
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/trending")
     public ResponseEntity<List<GameDto>> getTrendingGames(Authentication authentication) {
         return ResponseEntity

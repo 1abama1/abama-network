@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, MessageCircle, Repeat, Share, MoreHorizontal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
+import { useAuth } from '../../context/AuthContext';
 import ShareMenu from '../Common/ShareMenu';
+import { Trash2 } from 'lucide-react';
 import './Feed.css';
 
 interface PostProps {
@@ -31,6 +33,8 @@ interface PostProps {
 
 const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showOptions, setShowOptions] = useState(false);
   // Optimistic UI State
   const [localLiked, setLocalLiked] = useState(post.isLiked);
   const [localLikeCount, setLocalLikeCount] = useState(post.likesCount);
@@ -107,6 +111,21 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
       setIsSyncing(false);
     }
   };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+
+    try {
+      await axiosInstance.delete(`/posts/${post.id}`);
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to delete post', error);
+      alert("Failed to delete post. Please try again.");
+    }
+  };
+
+  const isAuthor = user?.username === post.author.username;
 
   const targetPostId = post.originalPost ? post.originalPost.id : post.id;
 
@@ -186,7 +205,32 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
                   return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
                 })()}
               </span>
-              <button className="post-options-btn"><MoreHorizontal size={18} /></button>
+              <div className="post-options-container">
+                <button 
+                  className="post-options-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowOptions(!showOptions);
+                  }}
+                >
+                  <MoreHorizontal size={18} />
+                </button>
+                <AnimatePresence>
+                  {showOptions && isAuthor && (
+                    <motion.div 
+                      className="post-options-dropdown glass"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                    >
+                      <button className="dropdown-item delete-item" onClick={handleDelete}>
+                        <Trash2 size={16} />
+                        <span>Delete Post</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
             <p className="post-text">

@@ -372,6 +372,16 @@
   transform: translateY(-3px);
 }
 
+.edit-btn:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.delete-btn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
 .hero-main-btn {
   font-size: 1.25rem !important;
   padding: 1.2rem 3.5rem !important;

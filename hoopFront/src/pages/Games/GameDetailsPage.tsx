@@ -11,18 +11,24 @@ import {
     ShieldCheck,
     Zap,
     Share2,
-    Info
+    Info,
+    Edit2,
+    Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import axiosInstance from '../../api/axiosConfig';
+import { useAuth } from '../../context/AuthContext';
 import ShareMenu from '../../components/Common/ShareMenu';
+import CreateGameModal from '../../components/Games/CreateGameModal';
 import '../../components/Games/Games.css';
 
 const GameDetailsPage = () => {
     const { gameId } = useParams<{ gameId: string }>();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [game, setGame] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const fetchGameDetails = useCallback(async () => {
         setLoading(true);
@@ -62,6 +68,20 @@ const GameDetailsPage = () => {
             console.error('Registration failed', error);
         }
     };
+
+    const handleDeleteGame = async () => {
+        if (!window.confirm("Are you sure you want to cancel and delete this run? This action cannot be undone.")) return;
+        
+        try {
+            await axiosInstance.delete(`/games/${gameId}`);
+            navigate('/schedule');
+        } catch (error) {
+            console.error('Failed to delete game', error);
+            alert("Failed to delete game. Please try again.");
+        }
+    };
+
+    const isCreator = user?.username === game?.creator?.username;
 
     if (loading) {
         return (
@@ -129,6 +149,17 @@ const GameDetailsPage = () => {
                         {game.isRegistered ? 'UNREGISTER' : isFull ? 'SQUAD FULL' : 'JOIN THE RUN'}
                         {!game.isRegistered && !isFull && <Zap size={18} fill="currentColor" />}
                     </button>
+                    
+                    {isCreator && (
+                        <>
+                            <button className="action-circle-btn edit-btn" onClick={() => setIsEditModalOpen(true)}>
+                                <Edit2 size={20} />
+                            </button>
+                            <button className="action-circle-btn delete-btn" onClick={handleDeleteGame}>
+                                <Trash2 size={20} />
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -221,6 +252,16 @@ const GameDetailsPage = () => {
                     </div>
                 </aside>
             </div>
+
+            <AnimatePresence>
+                {isEditModalOpen && (
+                    <CreateGameModal 
+                        onClose={() => setIsEditModalOpen(false)} 
+                        onGameCreated={fetchGameDetails}
+                        editGame={game}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

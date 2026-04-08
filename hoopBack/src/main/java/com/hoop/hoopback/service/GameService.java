@@ -88,6 +88,39 @@ public class GameService {
                                 .ifPresent(gameRegistrationRepository::delete);
         }
 
+        @Transactional
+        @CacheEvict(value = "games", key = "'upcoming:' + #username")
+        public GameDto updateGame(Long id, CreateGameRequest request, String username) {
+                Game game = gameRepository.findById(id)
+                                .orElseThrow(() -> new IllegalArgumentException("Игра не найдена"));
+
+                if (!game.getCreator().getUsername().equals(username)) {
+                        throw new IllegalArgumentException("У вас нет прав на редактирование этой игры");
+                }
+
+                game.setTitle(request.title());
+                game.setDescription(request.description());
+                game.setLocation(request.location());
+                game.setDateTime(request.dateTime());
+                game.setMinPlayers(request.minPlayers());
+                game.setMaxPlayers(request.maxPlayers());
+
+                return mapToDto(gameRepository.save(game), game.getCreator());
+        }
+
+        @Transactional
+        @CacheEvict(value = "games", allEntries = true)
+        public void deleteGame(Long id, String username) {
+                Game game = gameRepository.findById(id)
+                                .orElseThrow(() -> new IllegalArgumentException("Игра не найдена"));
+
+                if (!game.getCreator().getUsername().equals(username)) {
+                        throw new IllegalArgumentException("У вас нет прав на удаление этой игры");
+                }
+
+                gameRepository.delete(game);
+        }
+
         @Transactional(readOnly = true)
         @Cacheable(value = "games", key = "'upcoming:' + #currentUsername")
         public List<GameDto> getUpcomingGames(String currentUsername) {
