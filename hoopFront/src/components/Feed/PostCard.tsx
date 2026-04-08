@@ -99,7 +99,7 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
     setIsSyncing(true);
 
     try {
-      await axiosInstance.post(`/posts/${post.id}/repost`, {});
+      await axiosInstance.post(`/posts/${targetPostId}/repost`, {});
       onUpdate(); // For reposts, we want the whole feed to refresh to show the new item
     } catch (error) {
       // ROLLBACK on failure

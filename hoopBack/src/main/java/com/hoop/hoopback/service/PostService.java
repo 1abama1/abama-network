@@ -111,12 +111,25 @@ public class PostService {
         }
 
         @Transactional
-        public PostDto repost(String username, Long postId, RepostRequest request) {
+        public PostDto repost(String username, Long id, RepostRequest request) {
                 User user = userRepository.findByUsername(username)
                                 .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
-                Post originalPost = postRepository.findById(postId)
-                                .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));
 
+                // Logic: If the 'id' is a Repost ID, we actually want to repost the ORIGINAL post.
+                // Standard social media behavior (X/Twitter).
+                Post originalPost = postRepository.findWithAuthorById(id)
+                                .orElseGet(() -> {
+                                        // If not found in posts, check if it's a repost_id
+                                        return repostRepository.findById(id)
+                                                        .map(repost -> {
+                                                                // Fetch original post with author for notification
+                                                                return postRepository.findWithAuthorById(repost.getOriginalPost().getId())
+                                                                                .orElseThrow(() -> new IllegalArgumentException("Оригинальный пост не найден"));
+                                                        })
+                                                        .orElseThrow(() -> new IllegalArgumentException("Пост не найден"));
+                                });
+
+                // Check if already reposted to prevent duplicates (redundant with DB constraint but good for UX)
                 if (repostRepository.existsByUserAndOriginalPost(user, originalPost)) {
                         throw new IllegalStateException("Вы уже репостнули этот пост");
                 }
@@ -124,16 +137,16 @@ public class PostService {
                 Repost repost = Repost.builder()
                                 .user(user)
                                 .originalPost(originalPost)
-                                .caption(request.caption())
+                                .caption(request != null ? request.caption() : null)
                                 .build();
 
                 Repost saved = repostRepository.save(repost);
 
                 // Notify original post author
+                // originalPost is now eagerly loaded, so notify() won't crash in @Async thread
                 notificationService.notify(originalPost.getAuthor(), user, NotificationType.REPOST,
                                 originalPost.getId(), "POST");
 
-                // Map to PostDto for the feed (a repost acts like a post in the feed)
                 return mapRepostToPostDto(saved, user);
         }
 

@@ -13,6 +13,9 @@ import java.util.List;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"author"})
+    java.util.Optional<Post> findWithAuthorById(Long id);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"author"})
     Page<Post> findAllByAuthorInOrderByCreatedAtDesc(List<User> authors, Pageable pageable);
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"author"})
