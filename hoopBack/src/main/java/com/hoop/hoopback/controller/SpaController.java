@@ -13,7 +13,7 @@ public class SpaController {
 
     @RequestMapping(value = {
             "/{path:(?!api|ws|static|assets)[^\\.]*}",
-            "/**/{path:(?!api|ws|static|assets)[^\\.]*}"
+            "/{root:(?!api|ws|static|assets)[^/]+}/**/{path:[^\\.]*}"
     })
     public String forward() {
         // Exclude API, WebSocket, and static assets from being caught by the SPA forwarder
