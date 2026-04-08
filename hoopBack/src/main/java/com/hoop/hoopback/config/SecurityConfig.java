@@ -37,10 +37,11 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/ws/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/ws/**", "/error").permitAll()
+                        .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/", "/index.html", "/index.htm", "/assets/**", "/static/**", "/*.ico",
                                 "/*.js", "/*.css", "/*.json", "/*.png", "/*.svg", "/favicon.ico").permitAll()
-                        .requestMatchers("/{path:[^\\.]*}").permitAll() // SPA Forwarding
+                        .requestMatchers("/{path:[^\\.]*}", "/**/{path:[^\\.]*}").permitAll() // SPA Forwarding
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
