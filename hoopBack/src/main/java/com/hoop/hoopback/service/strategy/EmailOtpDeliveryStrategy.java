@@ -25,6 +25,7 @@ public class EmailOtpDeliveryStrategy implements OtpDeliveryStrategy {
     private String fromEmail;
 
     @Override
+    @org.springframework.scheduling.annotation.Async
     public void deliverOtp(User user, String otpCode) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
