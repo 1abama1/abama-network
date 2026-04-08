@@ -335,7 +335,6 @@ button {
   .nav-item span,
   .user-info,
   .sidebar-footer button span,
-  .post-text,
   .post-title,
   .user-status {
     display: none !important;
