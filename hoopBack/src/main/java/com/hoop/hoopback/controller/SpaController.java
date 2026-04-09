@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class SpaController {
 
     @RequestMapping(value = {
-            "/{path:(?!api|ws|static|assets)[^\\.]*}",
-            "/{root:(?!api|ws|static|assets)[^/]+}/{path:[^\\.]*}",
-            "/{root:(?!api|ws|static|assets)[^/]+}/**/{path:[^\\.]*}"
+            "/{path:[^\\.]*}",
+            "/*/{path:[^\\.]*}",
+            "/**/{path:[^\\.]*}"
     })
     public String forward() {
         // Exclude API, WebSocket, and static assets from being caught by the SPA forwarder
