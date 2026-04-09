@@ -44,7 +44,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/", "/index.html", "/index.htm", "/assets/**", "/static/**", "/*.ico",
                                 "/*.js", "/*.css", "/*.json", "/*.png", "/*.svg", "/favicon.ico").permitAll()
-                        .requestMatchers("/{path:(?!api|ws|static|assets)[^\\.]*}", "/**/{path:(?!api|ws|static|assets)[^\\.]*}").permitAll() // SPA Forwarding
+                        .requestMatchers("/{path:(?!api|ws|static|assets)[^\\.]*}",
+                                "/{root:(?!api|ws|static|assets)[^/]+}/{path:[^\\.]*}",
+                                "/{root:(?!api|ws|static|assets)[^/]+}/**/{path:[^\\.]*}").permitAll() // SPA Forwarding
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -13,6 +13,7 @@ public class SpaController {
 
     @RequestMapping(value = {
             "/{path:(?!api|ws|static|assets)[^\\.]*}",
+            "/{root:(?!api|ws|static|assets)[^/]+}/{path:[^\\.]*}",
             "/{root:(?!api|ws|static|assets)[^/]+}/**/{path:[^\\.]*}"
     })
     public String forward() {
