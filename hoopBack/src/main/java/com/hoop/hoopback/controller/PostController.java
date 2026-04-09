@@ -115,6 +115,18 @@ public class PostController {
                 pageable));
     }
 
+    @GetMapping("/liked/{username}")
+    public ResponseEntity<Page<PostDto>> getLikedPosts(
+            @PathVariable String username,
+            @PageableDefault(size = 20) Pageable pageable,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(postService.getLikedPosts(
+                username,
+                authentication != null ? authentication.getName() : null,
+                pageable));
+    }
+
     @GetMapping("/search")
     public ResponseEntity<Page<PostDto>> searchPosts(
             @RequestParam String q,

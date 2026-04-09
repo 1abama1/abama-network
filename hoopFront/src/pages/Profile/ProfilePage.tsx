@@ -16,11 +16,13 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
+  const [likedPosts, setLikedPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('posts');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [gamesLoaded, setGamesLoaded] = useState(false);
+  const [likesLoaded, setLikesLoaded] = useState(false);
 
   const isOwnProfile = currentUser?.username === username;
 
@@ -57,6 +59,18 @@ const ProfilePage = () => {
     }
   }, [username, gamesLoaded]);
 
+  const fetchLikedPosts = useCallback(async () => {
+    if (likesLoaded) return;
+    try {
+      const res = await axiosInstance.get(`/posts/liked/${username}`);
+      setLikedPosts(res.data.content || []);
+      setLikesLoaded(true);
+    } catch (error) {
+      console.error('Failed to fetch liked posts', error);
+      setLikedPosts([]);
+    }
+  }, [username, likesLoaded]);
+
   const handleGameRegister = async (gameId: string | number) => {
     const game = games.find((g: any) => g.id === gameId);
     if (!game) return;
@@ -77,8 +91,10 @@ const ProfilePage = () => {
   useEffect(() => {
     if (activeTab === 'games') {
       fetchGames();
+    } else if (activeTab === 'likes') {
+      fetchLikedPosts();
     }
-  }, [activeTab, fetchGames]);
+  }, [activeTab, fetchGames, fetchLikedPosts]);
 
   const handleFollow = async () => {
     if (isActionLoading || !profile) return;
@@ -117,6 +133,7 @@ const ProfilePage = () => {
     if (username) {
       fetchProfileData();
       setGamesLoaded(false);
+      setLikesLoaded(false);
       setActiveTab('posts');
     }
   }, [username, fetchProfileData]);
@@ -271,13 +288,24 @@ const ProfilePage = () => {
             </motion.div>
           )}
 
-          {activeTab === 'likes' && isOwnProfile && (
+          {activeTab === 'likes' && likedPosts.map((post: any) => (
+            <PostCard 
+              key={post.id} 
+              post={post} 
+              onUpdate={() => {
+                setLikesLoaded(false);
+                fetchLikedPosts();
+              }} 
+            />
+          ))}
+
+          {activeTab === 'likes' && likedPosts.length === 0 && likesLoaded && (
             <motion.div 
               className="empty-tab-state"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <p>Liked posts coming soon</p>
+              <p>No liked posts yet</p>
             </motion.div>
           )}
         </AnimatePresence>

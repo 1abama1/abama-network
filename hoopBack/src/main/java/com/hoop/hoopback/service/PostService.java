@@ -173,6 +173,12 @@ public class PostService {
                 return mapToDtoPage(postRepository.findAllByAuthorUsernameOrderByCreatedAtDesc(username, pageable), currentUser);
         }
 
+        public Page<PostDto> getLikedPosts(String username, String currentUsername, Pageable pageable) {
+                User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
+                                : null;
+                return mapToDtoPage(likeRepository.findLikedPostsByUsername(username, pageable), currentUser);
+        }
+
         public Page<PostDto> searchPosts(String q, String currentUsername, Pageable pageable) {
                 User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
                                 : null;
