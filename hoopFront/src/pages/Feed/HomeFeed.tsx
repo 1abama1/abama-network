@@ -1,15 +1,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { RefreshCw } from 'lucide-react';
-import axiosInstance from '../../api/axiosConfig';
+import { postService } from '../../api/services/postService';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/Common/Toast';
 import CreatePost from '../../components/Feed/CreatePost';
 import PostCard from '../../components/Feed/PostCard';
+import type { Post } from '../../types/post';
 import '../../components/Feed/Feed.css';
 
 const HomeFeed = () => {
   const { user } = useAuth();
-  const [posts, setPosts] = useState<any[]>([]);
+  const { addToast } = useToast();
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -18,16 +21,16 @@ const HomeFeed = () => {
     else setLoading(true);
 
     try {
-      const response = await axiosInstance.get('/posts/feed');
+      const response = await postService.getFeed();
       setPosts(response.data.content || []);
     } catch (error) {
-      console.error('Failed to fetch feed', error);
-      setPosts([]); // Clear posts on error to avoid showing stale mocks
+      addToast('Failed to load feed', 'error');
+      setPosts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [addToast]);
 
   useEffect(() => {
     fetchPosts();
@@ -50,16 +53,25 @@ const HomeFeed = () => {
         <CreatePost
           onPostCreated={() => fetchPosts(true)}
           onOptimisticPost={(content) => {
-            const tempPost = {
+            const tempPost: Post = {
               id: -Date.now(),
+              author: {
+                id: 0,
+                username: user?.username || 'Unknown',
+                positions: null,
+                height: null,
+                followersCount: 0,
+                bio: null,
+              },
               content,
               createdAt: new Date().toISOString(),
-              author: { username: user?.username || 'Unknown', displayName: user?.username || 'Unknown' },
               likesCount: 0,
               commentsCount: 0,
               repostsCount: 0,
               isLiked: false,
-              isReposted: false
+              isReposted: false,
+              originalPost: null,
+              caption: null,
             };
             setPosts(prev => [tempPost, ...prev]);
           }}

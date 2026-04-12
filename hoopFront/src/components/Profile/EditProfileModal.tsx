@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Save, Ruler, Weight, ArrowUpCircle } from 'lucide-react';
-import axiosInstance from '../../api/axiosConfig';
+import { userService } from '../../api/services/userService';
+import type { Profile } from '../../types/user';
+import { useToast } from '../../components/Common/Toast';
 
 interface EditProfileModalProps {
-  profile: any;
+  profile: Profile;
   onClose: () => void;
-  onSave: (updatedProfile: any) => void;
+  onSave: (updatedProfile: Profile) => void;
 }
 
 const POSITIONS = [
@@ -27,6 +29,7 @@ const EditProfileModal = ({ profile, onClose, onSave }: EditProfileModalProps) =
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { addToast } = useToast();
 
   const handlePositionToggle = (pos: string) => {
     setFormData(prev => ({
@@ -51,19 +54,25 @@ const EditProfileModal = ({ profile, onClose, onSave }: EditProfileModalProps) =
     };
 
     try {
-      const response = await axiosInstance.put('/users/profile', submissionData);
+      const response = await userService.updateProfile(submissionData);
       onSave(response.data);
+      addToast('Profile updated successfully!', 'success');
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+    } catch (err: unknown) {
+      let message = 'Failed to update profile';
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { message?: string } } };
+        message = axiosErr.response?.data?.message || message;
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="modal-overlay">
-      <motion.div 
+    <div className="modal-overlay" onClick={onClose}>
+      <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -80,7 +89,7 @@ const EditProfileModal = ({ profile, onClose, onSave }: EditProfileModalProps) =
 
           <div className="form-section">
             <label>Bio</label>
-            <textarea 
+            <textarea
               value={formData.bio}
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
               placeholder="Tell the court about yourself..."
@@ -91,8 +100,8 @@ const EditProfileModal = ({ profile, onClose, onSave }: EditProfileModalProps) =
           <div className="stats-edit-grid">
             <div className="form-group">
               <label><Ruler size={14} /> Height (cm)</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 value={formData.height}
                 min={140} max={250}
                 onChange={(e) => setFormData({ ...formData, height: parseFloat(e.target.value) })}
@@ -100,8 +109,8 @@ const EditProfileModal = ({ profile, onClose, onSave }: EditProfileModalProps) =
             </div>
             <div className="form-group">
               <label><Weight size={14} /> Weight (kg)</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 value={formData.weight}
                 min={40} max={200}
                 onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) })}
@@ -109,8 +118,8 @@ const EditProfileModal = ({ profile, onClose, onSave }: EditProfileModalProps) =
             </div>
             <div className="form-group">
               <label><ArrowUpCircle size={14} /> Vertical (in)</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 value={formData.jump}
                 min={0} max={150}
                 onChange={(e) => setFormData({ ...formData, jump: parseFloat(e.target.value) })}

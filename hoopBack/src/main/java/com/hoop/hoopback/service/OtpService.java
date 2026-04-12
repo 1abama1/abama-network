@@ -2,6 +2,7 @@ package com.hoop.hoopback.service;
 
 import com.hoop.hoopback.entity.User;
 import com.hoop.hoopback.exception.InvalidCredentialsException;
+import com.hoop.hoopback.exception.ResourceNotFoundException;
 import com.hoop.hoopback.exception.TooManyOtpAttemptsException;
 import com.hoop.hoopback.repository.UserRepository;
 import com.hoop.hoopback.service.strategy.OtpDeliveryStrategy;
@@ -87,6 +88,6 @@ public class OtpService {
     private User findUser(String identifier) {
         return userRepository.findByEmail(identifier)
             .or(() -> userRepository.findByUsername(identifier))
-            .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+            .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
     }
 }

@@ -2,203 +2,187 @@ package com.hoop.hoopback.service;
 
 import com.hoop.hoopback.dto.request.CreateGameRequest;
 import com.hoop.hoopback.dto.response.GameDto;
-import com.hoop.hoopback.dto.response.UserSummaryDto;
 import com.hoop.hoopback.entity.Game;
 import com.hoop.hoopback.entity.GameRegistration;
 import com.hoop.hoopback.entity.User;
-import com.hoop.hoopback.entity.NotificationType;
-import com.hoop.hoopback.exception.InvalidCredentialsException;
+import com.hoop.hoopback.exception.*;
+import com.hoop.hoopback.mapper.UserMapper;
 import com.hoop.hoopback.repository.GameRegistrationRepository;
 import com.hoop.hoopback.repository.GameRepository;
 import com.hoop.hoopback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.PageRequest;
 
 @Service
 @RequiredArgsConstructor
 public class GameService {
 
-        private final GameRepository gameRepository;
-        private final GameRegistrationRepository gameRegistrationRepository;
-        private final UserRepository userRepository;
-        private final NotificationService notificationService;
+    private final GameRepository gameRepository;
+    private final GameRegistrationRepository gameRegistrationRepository;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
-        @Transactional
-        @CacheEvict(value = "games", allEntries = true)
-        public GameDto createGame(String username, CreateGameRequest request) {
-                User user = userRepository.findByUsername(username)
-                                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+    @Transactional
+    @CacheEvict(value = "games", allEntries = true)
+    public GameDto createGame(String username, CreateGameRequest request) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
 
-                Game game = Game.builder()
-                                .creator(user)
-                                .title(request.title())
-                                .description(request.description())
-                                .location(request.location())
-                                .dateTime(request.dateTime())
-                                .minPlayers(request.minPlayers())
-                                .maxPlayers(request.maxPlayers())
-                                .build();
+        Game game = Game.builder()
+                .creator(user)
+                .title(request.title())
+                .description(request.description())
+                .location(request.location())
+                .dateTime(request.dateTime())
+                .minPlayers(request.minPlayers())
+                .maxPlayers(request.maxPlayers())
+                .build();
 
-                return mapToDto(gameRepository.save(game), user);
+        return mapToDto(gameRepository.save(game), user);
+    }
+
+    @Transactional
+    @CacheEvict(value = "games", allEntries = true)
+    public void registerForGame(String username, Long gameId) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ResourceNotFoundException("Игра не найдена"));
+
+        if (gameRegistrationRepository.existsByUserAndGame(user, game)) {
+            throw new DuplicateResourceException("Вы уже записаны на эту игру");
         }
 
-        @Transactional
-        @CacheEvict(value = "games", allEntries = true)
-        public void registerForGame(String username, Long gameId) {
-                User user = userRepository.findByUsername(username)
-                                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
-                Game game = gameRepository.findById(gameId)
-                                .orElseThrow(() -> new IllegalArgumentException("Игра не найдена"));
-
-                if (gameRegistrationRepository.existsByUserAndGame(user, game)) {
-                        throw new IllegalArgumentException("Вы уже записаны на эту игру");
-                }
-
-                if (gameRegistrationRepository.countByGame(game) >= game.getMaxPlayers()) {
-                        throw new IllegalArgumentException("На игру больше нет мест");
-                }
-
-                GameRegistration registration = GameRegistration.builder()
-                                .user(user)
-                                .game(game)
-                                .build();
-
-                gameRegistrationRepository.save(registration);
-
-                // Notify game creator
-                notificationService.notify(game.getCreator(), user, NotificationType.GAME_JOIN, game.getId(), "GAME");
+        if (gameRegistrationRepository.countByGame(game) >= game.getMaxPlayers()) {
+            throw new GameFullException("На игру больше нет мест");
         }
 
-        @Transactional
-        public void unregisterFromGame(String username, Long gameId) {
-                User user = userRepository.findByUsername(username)
-                                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
-                Game game = gameRepository.findById(gameId)
-                                .orElseThrow(() -> new IllegalArgumentException("Игра не найдена"));
+        GameRegistration registration = GameRegistration.builder()
+                .user(user)
+                .game(game)
+                .build();
 
-                gameRegistrationRepository.findByUserAndGame(user, game)
-                                .ifPresent(gameRegistrationRepository::delete);
+        gameRegistrationRepository.save(registration);
+
+        eventPublisher.publishEvent(new com.hoop.hoopback.event.GameRegisteredEvent(this, user, game.getCreator(), game.getId()));
+    }
+
+    @Transactional
+    public void unregisterFromGame(String username, Long gameId) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ResourceNotFoundException("Игра не найдена"));
+
+        gameRegistrationRepository.findByUserAndGame(user, game)
+                .ifPresent(gameRegistrationRepository::delete);
+    }
+
+    @Transactional
+    @CacheEvict(value = "games", key = "'upcoming:' + #username")
+    public GameDto updateGame(Long id, CreateGameRequest request, String username) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Игра не найдена"));
+
+        if (!game.getCreator().getUsername().equals(username)) {
+            throw new UnauthorizedOperationException("У вас нет прав на редактирование этой игры");
         }
 
-        @Transactional
-        @CacheEvict(value = "games", key = "'upcoming:' + #username")
-        public GameDto updateGame(Long id, CreateGameRequest request, String username) {
-                Game game = gameRepository.findById(id)
-                                .orElseThrow(() -> new IllegalArgumentException("Игра не найдена"));
+        game.setTitle(request.title());
+        game.setDescription(request.description());
+        game.setLocation(request.location());
+        game.setDateTime(request.dateTime());
+        game.setMinPlayers(request.minPlayers());
+        game.setMaxPlayers(request.maxPlayers());
 
-                if (!game.getCreator().getUsername().equals(username)) {
-                        throw new IllegalArgumentException("У вас нет прав на редактирование этой игры");
-                }
+        return mapToDto(gameRepository.save(game), game.getCreator());
+    }
 
-                game.setTitle(request.title());
-                game.setDescription(request.description());
-                game.setLocation(request.location());
-                game.setDateTime(request.dateTime());
-                game.setMinPlayers(request.minPlayers());
-                game.setMaxPlayers(request.maxPlayers());
+    @Transactional
+    @CacheEvict(value = "games", allEntries = true)
+    public void deleteGame(Long id, String username) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Игра не найдена"));
 
-                return mapToDto(gameRepository.save(game), game.getCreator());
+        if (!game.getCreator().getUsername().equals(username)) {
+            throw new UnauthorizedOperationException("У вас нет прав на удаление этой игры");
         }
 
-        @Transactional
-        @CacheEvict(value = "games", allEntries = true)
-        public void deleteGame(Long id, String username) {
-                Game game = gameRepository.findById(id)
-                                .orElseThrow(() -> new IllegalArgumentException("Игра не найдена"));
+        gameRepository.delete(game);
+    }
 
-                if (!game.getCreator().getUsername().equals(username)) {
-                        throw new IllegalArgumentException("У вас нет прав на удаление этой игры");
-                }
+    @Transactional(readOnly = true)
+    @Cacheable(value = "games", key = "'upcoming:' + #currentUsername")
+    public List<GameDto> getUpcomingGames(String currentUsername) {
+        User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        return gameRepository.findAllByDateTimeAfterOrderByDateTimeAsc(LocalDateTime.now()).stream()
+                .map(game -> mapToDto(game, currentUser))
+                .collect(Collectors.toList());
+    }
 
-                gameRepository.delete(game);
-        }
+    @Transactional(readOnly = true)
+    public GameDto getGameDetails(Long gameId, String currentUsername) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ResourceNotFoundException("Игра не найдена"));
+        User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        return mapToDto(game, currentUser);
+    }
 
-        @Transactional(readOnly = true)
-        @Cacheable(value = "games", key = "'upcoming:' + #currentUsername")
-        public List<GameDto> getUpcomingGames(String currentUsername) {
-                User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
-                                : null;
-                return gameRepository.findAllByDateTimeAfterOrderByDateTimeAsc(LocalDateTime.now()).stream()
-                                .map(game -> mapToDto(game, currentUser))
-                                .collect(Collectors.toList());
-        }
+    @Transactional(readOnly = true)
+    public List<GameDto> searchGames(String q, String currentUsername) {
+        User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        return gameRepository
+                .findAllByTitleContainingIgnoreCaseOrLocationContainingIgnoreCaseOrderByDateTimeAsc(q, q)
+                .stream()
+                .map(game -> mapToDto(game, currentUser))
+                .collect(Collectors.toList());
+    }
 
-        @Transactional(readOnly = true)
-        public GameDto getGameDetails(Long gameId, String currentUsername) {
-                Game game = gameRepository.findById(gameId)
-                                .orElseThrow(() -> new IllegalArgumentException("Игра не найдена"));
-                User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
-                                : null;
-                return mapToDto(game, currentUser);
-        }
+    public List<GameDto> getTrendingGames(String currentUsername) {
+        User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        return gameRepository.findTrendingGames(LocalDateTime.now(), PageRequest.of(0, 3)).stream()
+                .map(game -> mapToDto(game, currentUser))
+                .collect(Collectors.toList());
+    }
 
-        @Transactional(readOnly = true)
-        public List<GameDto> searchGames(String q, String currentUsername) {
-                User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
-                                : null;
-                return gameRepository
-                                .findAllByTitleContainingIgnoreCaseOrLocationContainingIgnoreCaseOrderByDateTimeAsc(q,
-                                                q)
-                                .stream()
-                                .map(game -> mapToDto(game, currentUser))
-                                .collect(Collectors.toList());
-        }
+    @Transactional(readOnly = true)
+    public List<GameDto> getGamesByUsername(String username, String currentUsername) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+        User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        return gameRegistrationRepository.findAllByUserOrderByRegisteredAtDesc(user).stream()
+                .map(reg -> mapToDto(reg.getGame(), currentUser))
+                .collect(Collectors.toList());
+    }
 
-        public List<GameDto> getTrendingGames(String currentUsername) {
-                User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
-                                : null;
-                return gameRepository.findTrendingGames(LocalDateTime.now(), PageRequest.of(0, 3)).stream()
-                                .map(game -> mapToDto(game, currentUser))
-                                .collect(Collectors.toList());
-        }
+    private GameDto mapToDto(Game game, User currentUser) {
+        boolean isRegistered = currentUser != null
+                && gameRegistrationRepository.existsByUserAndGame(currentUser, game);
+        var players = game.getRegistrations().stream()
+                .map(reg -> userMapper.toSummaryDto(reg.getUser()))
+                .collect(Collectors.toList());
 
-        @Transactional(readOnly = true)
-        public List<GameDto> getGamesByUsername(String username, String currentUsername) {
-                User user = userRepository.findByUsername(username)
-                                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
-                User currentUser = currentUsername != null ? userRepository.findByUsername(currentUsername).orElse(null)
-                                : null;
-                return gameRegistrationRepository.findAllByUserOrderByRegisteredAtDesc(user).stream()
-                                .map(reg -> mapToDto(reg.getGame(), currentUser))
-                                .collect(Collectors.toList());
-        }
-
-        private GameDto mapToDto(Game game, User currentUser) {
-                boolean isRegistered = currentUser != null
-                                && gameRegistrationRepository.existsByUserAndGame(currentUser, game);
-                List<UserSummaryDto> players = game.getRegistrations().stream()
-                                .map(reg -> mapUserToSummaryDto(reg.getUser()))
-                                .collect(Collectors.toList());
-
-                return new GameDto(
-                                game.getId(),
-                                mapUserToSummaryDto(game.getCreator()),
-                                game.getTitle(),
-                                game.getDescription(),
-                                game.getLocation(),
-                                game.getDateTime(),
-                                game.getMinPlayers(),
-                                game.getMaxPlayers(),
-                                players.size(),
-                                players,
-                                isRegistered);
-        }
-
-        private UserSummaryDto mapUserToSummaryDto(User user) {
-                return new UserSummaryDto(
-                                user.getId(),
-                                user.getUsername(),
-                                user.getPositions() != null ? new java.util.HashSet<>(user.getPositions()) : null,
-                                user.getHeight(),
-                                user.getFollowersCount() != null ? user.getFollowersCount() : 0,
-                                user.getBio());
-        }
+        return new GameDto(
+                game.getId(),
+                userMapper.toSummaryDto(game.getCreator()),
+                game.getTitle(),
+                game.getDescription(),
+                game.getLocation(),
+                game.getDateTime(),
+                game.getMinPlayers(),
+                game.getMaxPlayers(),
+                players.size(),
+                players,
+                isRegistered);
+    }
 }

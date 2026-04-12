@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import Sidebar from '../Navigation/Sidebar';
-import axiosInstance from '../../api/axiosConfig';
+import { gameService } from '../../api/services/gameService';
+import { userService } from '../../api/services/userService';
 import { useNavigate } from 'react-router-dom';
 import { Trophy, Users, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import type { Game } from '../../types/game';
+import type { UserSummary } from '../../types/user';
 import './Layout.css';
 
 interface LayoutProps {
@@ -11,8 +14,8 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const [trendingGames, setTrendingGames] = useState<any[]>([]);
-  const [recommendedUsers, setRecommendedUsers] = useState<any[]>([]);
+  const [trendingGames, setTrendingGames] = useState<Game[]>([]);
+  const [recommendedUsers, setRecommendedUsers] = useState<UserSummary[]>([]);
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,8 +24,8 @@ const Layout = ({ children }: LayoutProps) => {
     const fetchSidebarData = async () => {
       try {
         const [gamesRes, usersRes] = await Promise.all([
-          axiosInstance.get('/games/trending'),
-          axiosInstance.get('/users/recommended')
+          gameService.getTrending(),
+          userService.getRecommended()
         ]);
         setTrendingGames(gamesRes.data.slice(0, 3));
         setRecommendedUsers(usersRes.data.slice(0, 3));
@@ -40,23 +43,8 @@ const Layout = ({ children }: LayoutProps) => {
     }
   };
 
-  /* 
-  const handleFollow = async (e: React.MouseEvent, username: string) => {
-    e.stopPropagation();
-    try {
-      await axiosInstance.post(`/users/follow/${username}`);
-      // Refresh the recommended users list
-      const usersRes = await axiosInstance.get('/users/recommended');
-      setRecommendedUsers(usersRes.data.slice(0, 3));
-    } catch (error) {
-      console.error('Failed to follow user', error);
-    }
-  };
-  */
-
   return (
     <div className="layout-container">
-      {/* Mobile Top Header */}
       <header className="mobile-header">
         <div className="mobile-logo">
           <Trophy size={24} color="var(--primary)" />
@@ -102,7 +90,7 @@ const Layout = ({ children }: LayoutProps) => {
                   <span className="item-title">{game.title}</span>
                   <span className="item-meta">
                     <Users size={12} />
-                    {game.playersCount} players joined
+                    {game.playerCount} players joined
                   </span>
                 </div>
                 <div className="item-chevron">→</div>
@@ -132,12 +120,6 @@ const Layout = ({ children }: LayoutProps) => {
                   <span className="baller-name">{user.username}</span>
                   <span className="baller-handle">@{user.username}</span>
                 </div>
-                {/* <button
-                  className="follow-small-btn"
-                  onClick={(e) => handleFollow(e, user.username)}
-                >
-                  <UserPlus size={14} />
-                </button> */}
               </div>
             )) : (
               <p className="empty-state">Looking for ballers...</p>

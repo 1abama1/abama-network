@@ -1,32 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Repeat, Share, MoreHorizontal } from 'lucide-react';
+import { Heart, MessageCircle, Repeat, Share, MoreHorizontal, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../../api/axiosConfig';
+import { likeService } from '../../api/services/likeService';
+import { postService } from '../../api/services/postService';
+import { repostService } from '../../api/services/repostService';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/Common/Toast';
+import { useConfirmDialog, ConfirmDialog } from '../Common/ConfirmDialog';
+import { renderContentWithMentions } from '../../utils/renderContentWithMentions';
+import { ensureUtc } from '../../utils/dateUtils';
 import ShareMenu from '../Common/ShareMenu';
-import { Trash2 } from 'lucide-react';
+import type { Post } from '../../types/post';
 import './Feed.css';
 
 interface PostProps {
-  post: {
-    id: number;
-    content: string;
-    createdAt: string;
-    author: {
-      username: string;
-      displayName?: string;
-      avatarUrl?: string;
-    };
-    likesCount: number;
-    commentsCount: number;
-    repostsCount: number;
-    isLiked: boolean;
-    isReposted: boolean;
-    originalPost?: any;
-    repostCaption?: string;
-  };
+  post: Post;
   onUpdate: () => void;
   onNavigateToPost?: (postId: number) => void;
 }
@@ -34,15 +24,15 @@ interface PostProps {
 const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToast } = useToast();
+  const { confirm, dialogProps } = useConfirmDialog();
   const [showOptions, setShowOptions] = useState(false);
-  // Optimistic UI State
   const [localLiked, setLocalLiked] = useState(post.isLiked);
   const [localLikeCount, setLocalLikeCount] = useState(post.likesCount);
   const [localReposted, setLocalReposted] = useState(post.isReposted);
   const [localRepostCount, setLocalRepostCount] = useState(post.repostsCount);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Sync with prop changes
   useEffect(() => {
     setLocalLiked(post.isLiked);
     setLocalLikeCount(post.likesCount);
@@ -54,7 +44,6 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
     e.stopPropagation();
     if (isSyncing) return;
 
-    // OPTIMISTIC UPDATE
     const wasLiked = localLiked;
     const newCount = wasLiked ? localLikeCount - 1 : localLikeCount + 1;
 
@@ -64,18 +53,14 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
 
     try {
       if (wasLiked) {
-        await axiosInstance.delete(`/posts/${post.id}/like`);
+        await likeService.unlikePost(post.id);
       } else {
-        await axiosInstance.post(`/posts/${post.id}/like`);
+        await likeService.likePost(post.id);
       }
-      // Silently sync with parent if needed, but UI is already updated
-      // onUpdate(); 
     } catch (error) {
-      // ROLLBACK on failure
       setLocalLiked(wasLiked);
       setLocalLikeCount(localLikeCount);
-      console.error('Failed to toggle like', error);
-      alert("Failed to like post. Check your connection.");
+      addToast('Failed to toggle like', 'error');
     } finally {
       setIsSyncing(false);
     }
@@ -85,28 +70,25 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
     e.stopPropagation();
     if (isSyncing) return;
     if (localReposted) {
-      alert("You have already reposted this.");
+      addToast('You have already reposted this.', 'info');
       return;
     }
 
-    const confirmRepost = window.confirm("Do you want to repost this to your feed?");
-    if (!confirmRepost) return;
+    const confirmed = await confirm('Repost', 'Do you want to repost this to your feed?');
+    if (!confirmed) return;
 
-    // OPTIMISTIC UPDATE
     const wasReposted = localReposted;
     setLocalReposted(true);
     setLocalRepostCount(localRepostCount + 1);
     setIsSyncing(true);
 
     try {
-      await axiosInstance.post(`/posts/${targetPostId}/repost`, {});
-      onUpdate(); // For reposts, we want the whole feed to refresh to show the new item
+      await repostService.repost(targetPostId);
+      onUpdate();
     } catch (error) {
-      // ROLLBACK on failure
       setLocalReposted(wasReposted);
       setLocalRepostCount(localRepostCount);
-      console.error('Failed to repost', error);
-      alert("Failed to repost. Please try again.");
+      addToast('Failed to repost', 'error');
     } finally {
       setIsSyncing(false);
     }
@@ -114,19 +96,18 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
+    const confirmed = await confirm('Delete Post', 'Are you sure you want to delete this post?');
+    if (!confirmed) return;
 
     try {
-      await axiosInstance.delete(`/posts/${post.id}`);
+      await postService.deletePost(post.id);
       onUpdate();
     } catch (error) {
-      console.error('Failed to delete post', error);
-      alert("Failed to delete post. Please try again.");
+      addToast('Failed to delete post', 'error');
     }
   };
 
   const isAuthor = user?.username === post.author.username;
-
   const targetPostId = post.originalPost ? post.originalPost.id : post.id;
 
   const handleCardClick = () => {
@@ -142,12 +123,11 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
     navigate(`/profile/${username}`);
   };
 
-  const renderContentWithMentions = (content: string) => {
-    if (!content) return null;
-    const parts = content.split(/(@[a-zA-Z0-9_]+)/g);
+  const renderMentionParts = (content: string) => {
+    const parts = renderContentWithMentions(content);
     return parts.map((part, index) => {
-      if (part.startsWith('@')) {
-        const username = part.substring(1);
+      if (part.isMention) {
+        const username = part.text.substring(1);
         return (
           <span
             key={index}
@@ -158,16 +138,22 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
             }}
             style={{ color: 'var(--primary)', cursor: 'pointer', position: 'relative', zIndex: 10 }}
           >
-            {part}
+            {part.text}
           </span>
         );
       }
-      return part;
+      return part.text;
     });
   };
 
+  const displayAuthor = post.originalPost ? post.originalPost.author : post.author;
+  const displayContent = post.originalPost ? post.originalPost.content : post.content;
+  const displayCreatedAt = post.originalPost ? post.originalPost.createdAt : post.createdAt;
+  const displayCommentsCount = post.originalPost ? post.originalPost.commentsCount : post.commentsCount;
+
   return (
     <>
+      <ConfirmDialog {...dialogProps} />
       <motion.div
         className={`post-card ${post.originalPost ? 'is-repost' : ''}`}
         initial={{ opacity: 0, y: 10 }}
@@ -183,30 +169,25 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
         )}
 
         <div className="post-main-content">
-          <div className="post-avatar" onClick={(e) => handleProfileClick(e, post.originalPost ? post.originalPost.author.username : post.author.username)} style={{ cursor: 'pointer' }}>
+          <div className="post-avatar" onClick={(e) => handleProfileClick(e, displayAuthor.username)} style={{ cursor: 'pointer' }}>
             <div className="avatar-placeholder">
-              {(post.originalPost ? post.originalPost.author.username : post.author.username).charAt(0).toUpperCase()}
+              {displayAuthor.username.charAt(0).toUpperCase()}
             </div>
           </div>
 
           <div className="post-content-container">
             <div className="post-user-info">
-              <span className="post-user-name" onClick={(e) => handleProfileClick(e, post.originalPost ? post.originalPost.author.username : post.author.username)} style={{ cursor: 'pointer' }}>
-                {post.originalPost ? post.originalPost.author.displayName || post.originalPost.author.username : post.author.displayName || post.author.username}
+              <span className="post-user-name" onClick={(e) => handleProfileClick(e, displayAuthor.username)} style={{ cursor: 'pointer' }}>
+                {displayAuthor.username}
               </span>
-              <span className="post-user-handle" onClick={(e) => handleProfileClick(e, post.originalPost ? post.originalPost.author.username : post.author.username)} style={{ cursor: 'pointer' }}>
-                @{post.originalPost ? post.originalPost.author.username : post.author.username}
+              <span className="post-user-handle" onClick={(e) => handleProfileClick(e, displayAuthor.username)} style={{ cursor: 'pointer' }}>
+                @{displayAuthor.username}
               </span>
-              {/* <span className="dot">·</span> */}
               <span className="post-time">
-                {(() => {
-                  const rawDate = post.originalPost ? post.originalPost.createdAt : post.createdAt;
-                  const dateStr = rawDate.endsWith('Z') ? rawDate : rawDate + 'Z';
-                  return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
-                })()}
+                {formatDistanceToNow(new Date(ensureUtc(displayCreatedAt)), { addSuffix: true })}
               </span>
               <div className="post-options-container">
-                <button 
+                <button
                   className="post-options-btn"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -217,7 +198,7 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
                 </button>
                 <AnimatePresence>
                   {showOptions && isAuthor && (
-                    <motion.div 
+                    <motion.div
                       className="post-options-dropdown glass"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -234,12 +215,12 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
             </div>
 
             <p className="post-text">
-              {renderContentWithMentions(post.originalPost ? post.originalPost.content : post.content)}
+              {renderMentionParts(displayContent)}
             </p>
 
-            {post.repostCaption && (
+            {post.caption && (
               <div className="quote-caption">
-                {post.repostCaption}
+                {post.caption}
               </div>
             )}
 
@@ -249,7 +230,7 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
                 onClick={handleCardClick}
               >
                 <MessageCircle size={18} />
-                <span>{post.originalPost ? post.originalPost.commentsCount : post.commentsCount}</span>
+                <span>{displayCommentsCount}</span>
               </button>
 
               <button
@@ -275,7 +256,7 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
 
               <ShareMenu
                 url={`/post/${targetPostId}`}
-                title={`Check out this post by @${post.originalPost ? post.originalPost.author.username : post.author.username}`}
+                title={`Check out this post by @${displayAuthor.username}`}
               >
                 <button className="interaction-btn share-btn">
                   <Share size={18} />

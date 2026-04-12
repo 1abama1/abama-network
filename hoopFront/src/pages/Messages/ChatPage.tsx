@@ -1,22 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Search, MapPin, Info, MessageCircle } from 'lucide-react';
-import axiosInstance from '../../api/axiosConfig';
 import { useAuth } from '../../context/AuthContext';
 import { useMessengerStore } from '../../store/messengerStore';
 import { useMessengerSocket } from '../../hooks/useMessengerSocket';
+import { tokenStorage } from '../../utils/tokenStorage';
+import { conversationService } from '../../api/services/conversationService';
+import { useToast } from '../../components/Common/Toast';
+import type { UserSummary } from '../../types/user';
+import type { Conversation, Message } from '../../types/messenger';
 import './Messages.css';
 
 const ChatPage = () => {
   const { user: currentUser } = useAuth();
-  const [mutuals, setMutuals] = useState<any[]>([]);
+  const { addToast } = useToast();
+  const [mutuals, setMutuals] = useState<UserSummary[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [targetPartner, setTargetPartner] = useState<string | null>(null);
-  const typingTimeoutRef = useRef<any>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Store state
   const {
     conversations,
     messagesByConv,
@@ -33,31 +37,28 @@ const ChatPage = () => {
     markMessageError
   } = useMessengerStore();
 
-  // Hook for real-time events
-  const token = localStorage.getItem('accessToken');
-  const { sendTypingStart, sendTypingStop } = useMessengerSocket(token);
+  const token = tokenStorage.getAccessToken();
+  const { sendMessage, sendTypingStart, sendTypingStop } = useMessengerSocket(token);
 
-  // Initial fetch: Conversations & Mutuals
   useEffect(() => {
     const init = async () => {
       setLoading(true);
       try {
         const [convsRes, mutualsRes] = await Promise.all([
-          axiosInstance.get('/conversations'),
-          axiosInstance.get('/conversations/mutuals')
+          conversationService.getConversations(),
+          conversationService.getMutuals()
         ]);
         setConversations(convsRes.data);
         setMutuals(mutualsRes.data);
       } catch (err) {
-        console.error('Failed to init messenger', err);
+        addToast('Failed to load messenger', 'error');
       } finally {
         setLoading(false);
       }
     };
     init();
-  }, [setConversations, setLoading]);
+  }, [setConversations, setLoading, addToast]);
 
-  // Load messages when active conversation changes
   useEffect(() => {
     if (!activeConvId) return;
     setTargetPartner(null);
@@ -67,27 +68,26 @@ const ChatPage = () => {
 
       if (!messagesByConv[activeConvId]) {
         try {
-          const res = await axiosInstance.get(`/conversations/${activeConvId}/messages`, {
-            params: { limit: 50 }
-          });
-          prependMessages(activeConvId, res.data, res.data.length === 50);
+          const res = await conversationService.getMessages(activeConvId, 50);
+          const msgs: Message[] = res.data;
+          prependMessages(activeConvId, msgs, msgs.length === 50);
         } catch (err) {
-          console.error('Failed to fetch messages', err);
+          addToast('Failed to load messages', 'error');
         }
       }
 
       if (currentChat && currentChat.unreadCount > 0) {
         try {
-          await axiosInstance.put(`/conversations/${activeConvId}/read`);
+          await conversationService.markRead(activeConvId);
           markConvRead(activeConvId);
         } catch (err) {
-          console.error('Failed to mark read', err);
+          addToast('Failed to mark read', 'error');
         }
       }
     };
 
     fetchMessages();
-  }, [activeConvId, prependMessages, messagesByConv, markConvRead, conversations]);
+  }, [activeConvId, prependMessages, messagesByConv, markConvRead, conversations, addToast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
@@ -103,9 +103,7 @@ const ChatPage = () => {
     }, 2000);
   };
 
-  /** Scroll to bottom */
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-    // delay to allow render
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
     }, 50);
@@ -120,47 +118,36 @@ const ChatPage = () => {
     setNewMessage('');
 
     if (activeConvId) {
-      const optimistic = {
-        id: Math.random() * -1,
+      const optimistic: Message = {
+        id: -(Date.now()),
         conversationId: activeConvId,
         senderUsername: currentUser.username,
-        content: content,
+        content,
         sentAt: new Date().toISOString(),
         pending: true,
-        clientTempId: tempId
+        clientTempId: tempId,
       };
-      addMessage(optimistic as any);
+      addMessage(optimistic);
 
-      try {
-        await axiosInstance.post(`/conversations/${activeConvId}/messages`, {
-          content,
-          clientTempId: tempId
-        });
-      } catch (err) {
-        console.error('Failed to send', err);
-        markMessageError(tempId);
-      }
+      const activeChat = conversations.find(c => c.id === activeConvId);
+      sendMessage(activeChat?.partnerUsername || '', content, tempId);
     } else if (targetPartner) {
       try {
-        const res = await axiosInstance.post(`/conversations/messages?receiver=${targetPartner}`, {
-          content,
-          clientTempId: tempId
-        });
+        const res = await conversationService.sendMessage(targetPartner, content, tempId);
         const newMsg = res.data;
 
-        // Optimistically add the conversation to the list instead of refetching all
         addConversation({
           id: newMsg.conversationId,
           partnerUsername: targetPartner,
           lastMessage: content,
           lastMessageAt: newMsg.sentAt,
           unreadCount: 0,
-          partnerOnline: true // Minimal baseline
-        } as any);
+          partnerOnline: true,
+        });
 
         setActiveConv(newMsg.conversationId);
       } catch (err) {
-        console.error('Failed to start conversation', err);
+        addToast('Failed to start conversation', 'error');
       }
     }
   };
@@ -185,7 +172,6 @@ const ChatPage = () => {
   const isTyping = typingUsers.length > 0;
   const currentMessages = activeConvId ? (messagesByConv[activeConvId] || []) : [];
 
-  // Scroll on initial messages load or when new messages arrive
   useEffect(() => {
     if (activeConvId && currentMessages.length > 0) {
       scrollToBottom('smooth');
@@ -261,8 +247,8 @@ const ChatPage = () => {
           <>
             <header className="chat-header">
               <div className="chat-header-info">
-                <button 
-                  className="mobile-back-btn" 
+                <button
+                  className="mobile-back-btn"
                   onClick={() => setActiveConv(null)}
                 >
                   ←

@@ -39,4 +39,8 @@ public class Notification {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    public void markRead() {
+        this.isRead = true;
+    }
 }

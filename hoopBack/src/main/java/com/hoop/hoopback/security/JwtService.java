@@ -18,7 +18,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${application.security.jwt.secret-key:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    @Value("${application.security.jwt.secret-key}")
     private String secretKey;
 
     @Value("${application.security.jwt.expiration:86400000}")
@@ -85,17 +85,7 @@ public class JwtService {
     }
 
     private SecretKey getSignInKey() {
-        byte[] keyBytes;
-        // Check if the key is a Hex string (common for 256-bit keys)
-        if (secretKey != null && secretKey.matches("^[0-9a-fA-F]+$") && secretKey.length() % 2 == 0) {
-            keyBytes = Decoders.BASE64.decode(secretKey); // Defaulting to BASE64 as per current implementation, but
-                                                          // allowing future Hex support
-            // Actually, the current implementation uses BASE64. If we change it to HEX now,
-            // existing tokens might break.
-            // But if the signature doesn't match, it's usually because the key string
-            // itself changed.
-        }
-        keyBytes = Decoders.BASE64.decode(secretKey);
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

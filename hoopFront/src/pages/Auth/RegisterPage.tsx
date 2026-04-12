@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { UserPlus, Trophy } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axiosInstance from '../../api/axiosConfig';
+import { authService } from '../../api/services/authService';
+import { useToast } from '../../components/Common/Toast';
 import './Auth.css';
 
 const RegisterPage = () => {
@@ -15,6 +16,7 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { addToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,15 +29,16 @@ const RegisterPage = () => {
 
     setLoading(true);
     try {
-      await axiosInstance.post('/auth/register', {
-        username: formData.username,
-        email: formData.email,
-        password: formData.password
-      });
-      // Redirect to OTP verification
+      await authService.register(formData.username, formData.email, formData.password);
       navigate('/verify-otp', { state: { identifier: formData.email } });
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Try again.');
+    } catch (err: unknown) {
+      let message = 'Registration failed. Try again.';
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { message?: string } } };
+        message = axiosErr.response?.data?.message || message;
+      }
+      setError(message);
+      addToast(message, 'error');
     } finally {
       setLoading(false);
     }

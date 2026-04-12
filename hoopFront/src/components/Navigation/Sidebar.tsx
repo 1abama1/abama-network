@@ -65,7 +65,10 @@ const Sidebar = () => {
           <Calendar size={24} />
           <span>Game Schedule</span>
         </NavLink>
-        <NavLink to={user?.username ? `/profile/${user.username}` : '#'} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+        <NavLink
+          to={user?.username ? `/profile/${user.username}` : '/explore'}
+          className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+        >
           <User size={24} />
           <span>Profile</span>
         </NavLink>

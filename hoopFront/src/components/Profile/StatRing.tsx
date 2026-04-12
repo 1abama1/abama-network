@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion } from 'framer-motion';
 import './Profile.css';
 
@@ -9,7 +10,7 @@ interface StatRingProps {
   color?: string;
 }
 
-const StatRing = ({ label, value, unit, percent, color = 'var(--primary)' }: StatRingProps) => {
+const StatRing = React.memo(({ label, value, unit, percent, color = 'var(--primary)' }: StatRingProps) => {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percent / 100) * circumference;
@@ -47,6 +48,6 @@ const StatRing = ({ label, value, unit, percent, color = 'var(--primary)' }: Sta
       <span className="stat-label">{label}</span>
     </div>
   );
-};
+});
 
 export default StatRing;

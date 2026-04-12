@@ -5,22 +5,24 @@ import com.hoop.hoopback.dto.response.UserSummaryDto;
 import com.hoop.hoopback.entity.Conversation;
 import com.hoop.hoopback.entity.Message;
 import com.hoop.hoopback.entity.User;
-import com.hoop.hoopback.exception.InvalidCredentialsException;
+import com.hoop.hoopback.exception.ResourceNotFoundException;
+import com.hoop.hoopback.exception.UnauthorizedOperationException;
+import com.hoop.hoopback.mapper.UserMapper;
 import com.hoop.hoopback.repository.ConversationRepository;
 import com.hoop.hoopback.repository.MessageRepository;
 import com.hoop.hoopback.repository.UserRepository;
+import com.hoop.hoopback.service.push.MessagePushService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +32,8 @@ public class MessageService {
     private final MessageRepository messageRepo;
     private final ConversationRepository convRepo;
     private final UserRepository userRepo;
-    private final SimpMessagingTemplate messaging;
+    private final UserMapper userMapper;
+    private final MessagePushService pushService;
     private final PresenceService presence;
     private final UnreadCounterService unreadCounter;
 
@@ -65,19 +68,12 @@ public class MessageService {
         Conversation conv = findConversation(conversationId, me);
         int safeLimit = Math.min(limit, 50);
 
-        log.debug("Fetching messages for conv={}, user={}, before={}, limit={}", conversationId, username, before,
-                safeLimit);
-
         List<Message> msgs;
         if (before == null) {
-            msgs = messageRepo.findTop50ByConversationAndDeletedAtIsNullOrderBySentAtDesc(
-                    conv, PageRequest.of(0, safeLimit));
+            msgs = messageRepo.findTop50ByConversationAndDeletedAtIsNullOrderBySentAtDesc(conv, PageRequest.of(0, safeLimit));
         } else {
-            msgs = messageRepo.findTop50ByConversationAndDeletedAtIsNullAndSentAtBeforeOrderBySentAtDesc(
-                    conv, before, PageRequest.of(0, safeLimit));
+            msgs = messageRepo.findTop50ByConversationAndDeletedAtIsNullAndSentAtBeforeOrderBySentAtDesc(conv, before, PageRequest.of(0, safeLimit));
         }
-
-        log.debug("Found {} messages in DB", msgs.size());
 
         return msgs.stream()
                 .map(MessageDto::fromEntity)
@@ -111,7 +107,7 @@ public class MessageService {
             String clientTempId) {
         User sender = findUser(senderUsername);
         Conversation conv = convRepo.findById(conversationId)
-                .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
 
         User receiver = conv.partnerFor(sender);
         return saveAndNotify(sender, receiver, conv, content, clientTempId);
@@ -129,16 +125,10 @@ public class MessageService {
         unreadCounter.increment(receiver.getId(), conv.getId());
 
         MessageDto dto = MessageDto.fromEntity(msg);
-
-        messaging.convertAndSendToUser(
-                receiver.getUsername(),
-                "/queue/messages",
-                dto);
+        pushService.pushToUser(receiver.getUsername(), "/queue/messages", dto);
 
         if (clientTempId != null) {
-            messaging.convertAndSendToUser(
-                    sender.getUsername(),
-                    "/queue/message-ack",
+            pushService.pushToUser(sender.getUsername(), "/queue/message-ack",
                     new MessageAckEvent(clientTempId, msg.getId(), msg.getSentAt()));
         }
 
@@ -155,9 +145,7 @@ public class MessageService {
 
         if (updated > 0) {
             User partner = conv.partnerFor(me);
-            messaging.convertAndSendToUser(
-                    partner.getUsername(),
-                    "/queue/read-receipt",
+            pushService.pushToUser(partner.getUsername(), "/queue/read-receipt",
                     new ReadReceiptEvent(conversationId, me.getUsername(), Instant.now()));
         }
     }
@@ -166,10 +154,10 @@ public class MessageService {
     public void deleteMessage(String username, Long messageId) {
         User me = findUser(username);
         Message m = messageRepo.findById(messageId)
-                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Message not found"));
 
         if (!m.getSender().getId().equals(me.getId())) {
-            throw new IllegalArgumentException("Cannot delete someone else's message");
+            throw new UnauthorizedOperationException("Cannot delete someone else's message");
         }
         if (m.isDeleted())
             return;
@@ -178,9 +166,7 @@ public class MessageService {
         messageRepo.save(m);
 
         User partner = m.getConversation().partnerFor(me);
-        messaging.convertAndSendToUser(
-                partner.getUsername(),
-                "/queue/message-deleted",
+        pushService.pushToUser(partner.getUsername(), "/queue/message-deleted",
                 new MessageDeletedEvent(messageId, m.getConversation().getId()));
     }
 
@@ -188,13 +174,7 @@ public class MessageService {
     public List<UserSummaryDto> getMutualFollowers(String username) {
         User me = findUser(username);
         return userRepo.findMutualFollowers(me.getId()).stream()
-                .map(u -> new UserSummaryDto(
-                        u.getId(),
-                        u.getUsername(),
-                        u.getPositions(),
-                        u.getHeight(),
-                        u.getFollowersCount() != null ? u.getFollowersCount() : 0,
-                        u.getBio()))
+                .map(userMapper::toSummaryDto)
                 .collect(Collectors.toList());
     }
 
@@ -206,21 +186,15 @@ public class MessageService {
 
     private User findUser(String username) {
         return userRepo.findByUsername(username)
-                .orElseThrow(() -> new InvalidCredentialsException("User not found: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 
     private Conversation findConversation(Long id, User me) {
         Conversation conv = convRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
         if (!conv.getUserA().getId().equals(me.getId()) && !conv.getUserB().getId().equals(me.getId())) {
-            throw new IllegalArgumentException("Access denied to conversation");
+            throw new UnauthorizedOperationException("Access denied to conversation");
         }
         return conv;
-    }
-
-    public record MessageAckEvent(String clientTempId, Long serverId, Instant sentAt) {
-    }
-
-    public record MessageDeletedEvent(Long messageId, Long conversationId) {
     }
 }

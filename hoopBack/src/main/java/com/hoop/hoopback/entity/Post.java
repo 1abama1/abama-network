@@ -51,4 +51,8 @@ public class Post {
 
     @org.hibernate.annotations.Formula("(SELECT COALESCE(COUNT(r.id), 0) FROM reposts r WHERE r.original_post_id = id)")
     private Long repostsCount;
+
+    public boolean isOwnedBy(String username) {
+        return author != null && author.getUsername().equals(username);
+    }
 }

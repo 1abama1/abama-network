@@ -2,13 +2,8 @@ package com.hoop.hoopback.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -18,7 +13,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User implements UserDetails {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -76,28 +71,15 @@ public class User implements UserDetails {
     @org.hibernate.annotations.Formula("(SELECT count(1) FROM user_followers uf WHERE uf.follower_id = id)")
     private Integer followingCount;
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    public void follow(User target) {
+        target.getFollowers().add(this);
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
+    public void unfollow(User target) {
+        target.getFollowers().remove(this);
     }
 
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return isEnabled;
+    public boolean isFollowing(User target) {
+        return followers.contains(target);
     }
 }

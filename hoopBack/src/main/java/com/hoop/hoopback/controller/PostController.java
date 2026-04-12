@@ -5,7 +5,10 @@ import com.hoop.hoopback.dto.request.CreatePostRequest;
 import com.hoop.hoopback.dto.request.RepostRequest;
 import com.hoop.hoopback.dto.response.CommentDto;
 import com.hoop.hoopback.dto.response.PostDto;
+import com.hoop.hoopback.service.CommentService;
+import com.hoop.hoopback.service.LikeService;
 import com.hoop.hoopback.service.PostService;
+import com.hoop.hoopback.service.RepostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,14 +18,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class PostController {
 
     private final PostService postService;
+    private final LikeService likeService;
+    private final CommentService commentService;
+    private final RepostService repostService;
 
     @PostMapping
     public ResponseEntity<PostDto> createPost(
@@ -50,13 +54,13 @@ public class PostController {
 
     @PostMapping("/{postId}/like")
     public ResponseEntity<Void> likePost(@PathVariable Long postId, Authentication authentication) {
-        postService.likePost(authentication.getName(), postId);
+        likeService.likePost(authentication.getName(), postId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{postId}/like")
     public ResponseEntity<Void> unlikePost(@PathVariable Long postId, Authentication authentication) {
-        postService.unlikePost(authentication.getName(), postId);
+        likeService.unlikePost(authentication.getName(), postId);
         return ResponseEntity.ok().build();
     }
 
@@ -66,12 +70,12 @@ public class PostController {
             @Valid @RequestBody CreateCommentRequest request,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(postService.addComment(authentication.getName(), postId, request));
+        return ResponseEntity.ok(commentService.addComment(authentication.getName(), postId, request));
     }
 
     @GetMapping("/{postId}/comments")
-    public ResponseEntity<List<CommentDto>> getComments(@PathVariable Long postId) {
-        return ResponseEntity.ok(postService.getPostComments(postId));
+    public ResponseEntity<?> getComments(@PathVariable Long postId) {
+        return ResponseEntity.ok(commentService.getPostComments(postId));
     }
 
     @PostMapping("/{postId}/repost")
@@ -80,8 +84,7 @@ public class PostController {
             @RequestBody(required = false) RepostRequest request,
             Authentication authentication
     ) {
-        // Handle empty request body if any, providing default if needed
-        return ResponseEntity.ok(postService.repost(authentication.getName(), postId, 
+        return ResponseEntity.ok(repostService.repost(authentication.getName(), postId,
                 request != null ? request : new RepostRequest(null)));
     }
 
@@ -99,7 +102,7 @@ public class PostController {
             Authentication authentication
     ) {
         return ResponseEntity.ok(postService.getGlobalFeed(
-                authentication != null ? authentication.getName() : null, 
+                authentication != null ? authentication.getName() : null,
                 pageable));
     }
 

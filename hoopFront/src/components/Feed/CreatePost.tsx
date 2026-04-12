@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { Smile, Send } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import axiosInstance from '../../api/axiosConfig';
+import { postService } from '../../api/services/postService';
+import { useToast } from '../../components/Common/Toast';
 import EmojiPicker from '../Common/EmojiPicker';
 import { AnimatePresence } from 'framer-motion';
 import './Feed.css';
@@ -15,6 +16,7 @@ const CreatePost = ({ onPostCreated, onOptimisticPost }: {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
+  const { addToast } = useToast();
 
   const handlePost = async () => {
     if (!content.trim()) return;
@@ -25,12 +27,12 @@ const CreatePost = ({ onPostCreated, onOptimisticPost }: {
     const originalContent = content;
     setContent('');
     try {
-      await axiosInstance.post('/posts', { content: originalContent });
+      await postService.createPost(originalContent);
       onPostCreated();
     } catch (error) {
       console.error('Failed to create post', error);
       setContent(originalContent);
-      alert("Failed to send post. Please try again.");
+      addToast('Failed to send post. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -46,7 +48,6 @@ const CreatePost = ({ onPostCreated, onOptimisticPost }: {
 
     setContent(newContent);
 
-    // Set focus back and move cursor
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + emoji.length, start + emoji.length);
@@ -68,8 +69,6 @@ const CreatePost = ({ onPostCreated, onOptimisticPost }: {
         />
         <div className="post-actions">
           <div className="tool-icons" style={{ position: 'relative' }}>
-            {/* <button className="tool-btn"><Image size={18} /></button> */}
-            {/* <button className="tool-btn"><MapPin size={18} /></button> */}
             <button
               className={`tool-btn ${showEmojiPicker ? 'active' : ''}`}
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}

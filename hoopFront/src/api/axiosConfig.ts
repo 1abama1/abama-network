@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { tokenStorage } from '../utils/tokenStorage';
+
 const API_BASE_URL = '/api';
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -7,10 +9,9 @@ const axiosInstance = axios.create({
   },
 });
 
-// Interceptor to add JWT token if available
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = tokenStorage.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -19,38 +20,31 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor to handle token refresh logic
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // If 401 Unauthorized and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = tokenStorage.getRefreshToken();
         if (!refreshToken) {
           throw new Error('No refresh token available');
         }
 
-        // Call refresh endpoint
         const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
           headers: { Authorization: `Bearer ${refreshToken}` }
         });
 
-        const { accessToken } = response.data;
-        localStorage.setItem('accessToken', accessToken);
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        tokenStorage.setTokens(accessToken, newRefreshToken || refreshToken);
 
-        // Retry original request
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // Refresh token expired or failed
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        tokenStorage.clear();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }

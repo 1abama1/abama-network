@@ -1,5 +1,6 @@
 package com.hoop.hoopback.entity;
 
+import com.hoop.hoopback.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -49,4 +50,16 @@ public class Game {
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<GameRegistration> registrations = new ArrayList<>();
+
+    public boolean isFull() {
+        return registrations.size() >= maxPlayers;
+    }
+
+    public boolean hasPlayer(User user) {
+        return registrations.stream().anyMatch(r -> r.getUser().getId().equals(user.getId()));
+    }
+
+    public boolean isOwnedBy(String username) {
+        return creator != null && creator.getUsername().equals(username);
+    }
 }

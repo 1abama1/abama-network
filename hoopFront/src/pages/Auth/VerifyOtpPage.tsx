@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axiosInstance from '../../api/axiosConfig';
+import { authService } from '../../api/services/authService';
+import { useToast } from '../../components/Common/Toast';
 import '../Auth/Auth.css';
 
 const VerifyOtpPage = () => {
@@ -13,12 +14,17 @@ const VerifyOtpPage = () => {
   const [attempts, setAttempts] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
+  const { addToast } = useToast();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const identifier = location.state?.identifier || '';
 
   useEffect(() => {
     if (!identifier) {
       navigate('/register');
     }
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   }, [identifier, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,24 +37,31 @@ const VerifyOtpPage = () => {
     setLoading(true);
     setError('');
     try {
-      await axiosInstance.post('/auth/verify-otp', { identifier, code });
+      await authService.verifyOtp(identifier, code);
       navigate('/login', {
         state: {
           message: 'Verification successful! You can now login.',
           identifier: identifier
         }
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
 
+      let message = 'Incorrect code.';
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { message?: string } } };
+        message = axiosErr.response?.data?.message || message;
+      }
+
       if (newAttempts >= 5) {
         setError('Too many failed attempts. Security lock triggered. Redirecting to login...');
-        setTimeout(() => {
+        addToast('Too many failed attempts.', 'error');
+        timeoutRef.current = setTimeout(() => {
           navigate('/login');
         }, 2500);
       } else {
-        setError(`${err.response?.data?.message || 'Incorrect code.'} ${5 - newAttempts} attempts remaining.`);
+        setError(`${message} ${5 - newAttempts} attempts remaining.`);
       }
     } finally {
       setLoading(false);
@@ -58,9 +71,11 @@ const VerifyOtpPage = () => {
   const handleResend = async () => {
     setResending(true);
     try {
-      await axiosInstance.post('/auth/resend-otp', { identifier });
+      await authService.resendOtp(identifier);
+      addToast('Verification code resent!', 'success');
     } catch (err) {
       console.error('Failed to resend OTP');
+      addToast('Failed to resend code. Please try again.', 'error');
     } finally {
       setResending(false);
     }

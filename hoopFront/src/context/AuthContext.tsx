@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { tokenStorage } from '../utils/tokenStorage';
 
 interface User {
   id: string;
@@ -11,7 +12,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (userData: any, accessToken: string, refreshToken: string) => void;
+  login: (userData: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -23,45 +24,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Attempt to hydrate user from localStorage
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('accessToken');
-    
+    const storedUser = tokenStorage.getUser<User>();
+    const token = tokenStorage.getAccessToken();
+
     if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+      setUser(storedUser);
     }
     setIsLoading(false);
   }, []);
 
   const login = (userData: User, accessToken: string, refreshToken: string) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
+    tokenStorage.setUser(userData);
+    tokenStorage.setTokens(accessToken, refreshToken);
     setUser(userData);
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    tokenStorage.clear();
     setUser(null);
     window.location.href = '/login';
   };
 
   const updateUser = (userData: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...userData };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-    }
+    setUser(prev => {
+      if (!prev) return prev;
+      const updatedUser = { ...prev, ...userData };
+      tokenStorage.setUser(updatedUser);
+      return updatedUser;
+    });
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated: !!user, 
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated: !!user,
       isLoading,
-      login, 
+      login,
       logout,
       updateUser
     }}>

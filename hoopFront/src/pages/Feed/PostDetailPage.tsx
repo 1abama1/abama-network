@@ -1,54 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send } from 'lucide-react';
-import axiosInstance from '../../api/axiosConfig';
+import { postService } from '../../api/services/postService';
+import { commentService } from '../../api/services/commentService';
+import { useToast } from '../../components/Common/Toast';
+import { renderContentWithMentions } from '../../utils/renderContentWithMentions';
+import { ensureUtc } from '../../utils/dateUtils';
 import PostCard from '../../components/Feed/PostCard';
-import './PostDetailPage.css';
+import type { Post, Comment } from '../../types/post';
 import { formatDistanceToNow } from 'date-fns';
+import './PostDetailPage.css';
 
 const PostDetailPage = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
+  const { addToast } = useToast();
 
-  const [post, setPost] = useState<any>(null);
-  const [comments, setComments] = useState<any[]>([]);
+  const [post, setPost] = useState<Post | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [replyContent, setReplyContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchPostAndComments = async () => {
+  const fetchPostAndComments = useCallback(async () => {
+    if (!postId) return;
     try {
       setLoading(true);
       const [postRes, commentsRes] = await Promise.all([
-        axiosInstance.get(`/posts/${postId}`),
-        axiosInstance.get(`/posts/${postId}/comments`)
+        postService.getPost(Number(postId)),
+        commentService.getComments(Number(postId)),
       ]);
       setPost(postRes.data);
       setComments(commentsRes.data || []);
     } catch (error) {
-      console.error('Failed to load post details', error);
+      addToast('Failed to load post details', 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId, addToast]);
 
   useEffect(() => {
-    if (postId) {
-      fetchPostAndComments();
-    }
-  }, [postId]);
+    fetchPostAndComments();
+  }, [fetchPostAndComments]);
 
   const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyContent.trim() || isSubmitting) return;
+    if (!replyContent.trim() || isSubmitting || !postId) return;
 
     setIsSubmitting(true);
     try {
-      await axiosInstance.post(`/posts/${postId}/comment`, { content: replyContent });
+      await commentService.addComment(Number(postId), replyContent);
       setReplyContent('');
-      fetchPostAndComments(); // refresh to get new comment and updated count
+      fetchPostAndComments();
     } catch (error) {
-      console.error('Failed to submit reply', error);
+      addToast('Failed to submit reply', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -57,9 +62,7 @@ const PostDetailPage = () => {
   if (loading) {
     return (
       <div className="home-feed">
-        <div className="feed-header">
-          <h2>Post</h2>
-        </div>
+        <div className="feed-header"><h2>Post</h2></div>
         <div className="feed-loading">
           <div className="basketball-spinner" />
           <p>Loading post...</p>
@@ -72,14 +75,10 @@ const PostDetailPage = () => {
     return (
       <div className="home-feed">
         <div className="feed-header">
-          <button className="back-btn" onClick={() => navigate(-1)}>
-            <ArrowLeft size={20} />
-          </button>
+          <button className="back-btn" onClick={() => navigate(-1)}><ArrowLeft size={20} /></button>
           <h2>Post not found</h2>
         </div>
-        <div className="empty-feed">
-          <p>This post may have been deleted.</p>
-        </div>
+        <div className="empty-feed"><p>This post may have been deleted.</p></div>
       </div>
     );
   }
@@ -88,19 +87,13 @@ const PostDetailPage = () => {
     <div className="home-feed">
       <div className="feed-header">
         <div className="header-left">
-          <button className="back-btn" onClick={() => navigate(-1)}>
-            <ArrowLeft size={20} />
-          </button>
+          <button className="back-btn" onClick={() => navigate(-1)}><ArrowLeft size={20} /></button>
           <h2>Post</h2>
         </div>
       </div>
 
       <div className="post-detail-main">
-        <PostCard
-          post={post}
-          onUpdate={fetchPostAndComments}
-          onNavigateToPost={() => { }} // empty so it doesn't navigate again
-        />
+        <PostCard post={post} onUpdate={fetchPostAndComments} onNavigateToPost={() => {}} />
       </div>
 
       <div className="post-detail-reply-section">
@@ -138,12 +131,12 @@ const PostDetailPage = () => {
               <div className="comment-content-wrapper">
                 <div className="comment-header-row">
                   <span className="comment-author-name" onClick={() => navigate(`/profile/${comment.author.username}`)} style={{ cursor: 'pointer' }}>@{comment.author.username}</span>
-                  <span className="comment-time">{formatDistanceToNow(new Date(comment.createdAt.endsWith('Z') ? comment.createdAt : comment.createdAt + 'Z'), { addSuffix: true })}</span>
+                  <span className="comment-time">{formatDistanceToNow(new Date(ensureUtc(comment.createdAt)), { addSuffix: true })}</span>
                 </div>
                 <p className="comment-text">
-                  {comment.content.split(/(@[a-zA-Z0-9_]+)/g).map((part: string, index: number) => {
-                    if (part.startsWith('@')) {
-                      const username = part.substring(1);
+                  {renderContentWithMentions(comment.content).map((part, index) => {
+                    if (part.isMention) {
+                      const username = part.text.substring(1);
                       return (
                         <span
                           key={index}
@@ -154,11 +147,11 @@ const PostDetailPage = () => {
                           }}
                           style={{ color: 'var(--primary)', cursor: 'pointer', position: 'relative', zIndex: 10 }}
                         >
-                          {part}
+                          {part.text}
                         </span>
                       );
                     }
-                    return part;
+                    return part.text;
                   })}
                 </p>
               </div>

@@ -2,29 +2,19 @@ import { motion } from 'framer-motion';
 import { MapPin, Users, Clock, ChevronRight, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import type { Game } from '../../types/game';
+import { renderContentWithMentions } from '../../utils/renderContentWithMentions';
+import { ensureUtc } from '../../utils/dateUtils';
 import './Games.css';
 
-interface GameProps {
-  game: {
-    id: string | number;
-    title: string;
-    description: string;
-    location: string;
-    dateTime: string;
-    minPlayers: number;
-    maxPlayers: number;
-    playersCount: number;
-    creator: {
-      username: string;
-    };
-    isRegistered: boolean;
-  };
-  onRegister: (id: string | number) => void;
+interface GameCardProps {
+  game: Game;
+  onRegister: (id: number) => void;
 }
 
-const GameCard = ({ game, onRegister }: GameProps) => {
-  const gameDate = new Date(game.dateTime);
-  const isFull = game.playersCount >= game.maxPlayers;
+const GameCard = ({ game, onRegister }: GameCardProps) => {
+  const gameDate = new Date(ensureUtc(game.dateTime));
+  const isFull = game.playerCount >= game.maxPlayers;
   const navigate = useNavigate();
 
   const handleCardClick = () => {
@@ -34,27 +24,6 @@ const GameCard = ({ game, onRegister }: GameProps) => {
   const handleProfileClick = (e: React.MouseEvent, username: string) => {
     e.stopPropagation();
     navigate(`/profile/${username}`);
-  };
-
-  const renderContentWithMentions = (content: string) => {
-    if (!content) return null;
-    const parts = content.split(/(@[a-zA-Z0-9_]+)/g);
-    return parts.map((part, index) => {
-      if (part.startsWith('@')) {
-        const username = part.substring(1);
-        return (
-          <span
-            key={index}
-            className="mention-link"
-            onClick={(e) => handleProfileClick(e, username)}
-            style={{ color: 'var(--primary)', cursor: 'pointer', position: 'relative', zIndex: 10 }}
-          >
-            {part}
-          </span>
-        );
-      }
-      return part;
-    });
   };
 
   return (
@@ -92,22 +61,37 @@ const GameCard = ({ game, onRegister }: GameProps) => {
         </div>
         <div className="detail-item">
           <Users size={16} />
-          <span>{game.playersCount}/{game.maxPlayers}</span>
+          <span>{game.playerCount}/{game.maxPlayers}</span>
         </div>
       </div>
 
-      <p className="game-description">{renderContentWithMentions(game.description)}</p>
+      <p className="game-description">
+        {renderContentWithMentions(game.description || '').map((part, index) =>
+          part.isMention ? (
+            <span
+              key={index}
+              className="mention-link"
+              onClick={(e) => handleProfileClick(e, part.text.substring(1))}
+              style={{ color: 'var(--primary)', cursor: 'pointer', position: 'relative', zIndex: 10 }}
+            >
+              {part.text}
+            </span>
+          ) : (
+            <span key={index}>{part.text}</span>
+          )
+        )}
+      </p>
 
       <div className="game-card-footer">
         <div className="player-progress-container">
           <div className="progress-text">
             <span>Progress</span>
-            <span>{Math.round((game.playersCount / game.maxPlayers) * 100)}%</span>
+            <span>{Math.round((game.playerCount / game.maxPlayers) * 100)}%</span>
           </div>
           <div className="player-progress">
             <div
               className="progress-bar"
-              style={{ width: `${(game.playersCount / game.maxPlayers) * 100}%` }}
+              style={{ width: `${(game.playerCount / game.maxPlayers) * 100}%` }}
             />
           </div>
         </div>

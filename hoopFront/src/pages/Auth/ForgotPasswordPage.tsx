@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, Mail, Zap, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axiosInstance from '../../api/axiosConfig';
+import { authService } from '../../api/services/authService';
+import { useToast } from '../../components/Common/Toast';
 import './Auth.css';
 
 const ForgotPasswordPage = () => {
@@ -15,17 +16,32 @@ const ForgotPasswordPage = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const navigate = useNavigate();
+    const { addToast } = useToast();
+    const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, []);
 
     const handleRequestReset = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setLoading(true);
         try {
-            await axiosInstance.post('/auth/forgot-password', { email });
+            await authService.forgotPassword(email);
             setStep('reset');
             setSuccess('Reset code sent! Please check your email.');
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to request password reset.');
+            addToast('Reset code sent to your email.', 'success');
+        } catch (err: unknown) {
+            let message = 'Failed to request password reset.';
+            if (typeof err === 'object' && err !== null && 'response' in err) {
+                const axiosErr = err as { response?: { data?: { message?: string } } };
+                message = axiosErr.response?.data?.message || message;
+            }
+            setError(message);
+            addToast(message, 'error');
         } finally {
             setLoading(false);
         }
@@ -42,15 +58,18 @@ const ForgotPasswordPage = () => {
 
         setLoading(true);
         try {
-            await axiosInstance.post('/auth/reset-password', {
-                identifier: email,
-                code: otp,
-                newPassword: newPassword
-            });
+            await authService.resetPassword(email, otp, newPassword);
             setSuccess('Password reset successful! Redirecting to login...');
-            setTimeout(() => navigate('/login', { state: { identifier: email } }), 2000);
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to reset password. Check your code.');
+            addToast('Password reset successful!', 'success');
+            timeoutRef.current = setTimeout(() => navigate('/login', { state: { identifier: email } }), 2000);
+        } catch (err: unknown) {
+            let message = 'Failed to reset password. Check your code.';
+            if (typeof err === 'object' && err !== null && 'response' in err) {
+                const axiosErr = err as { response?: { data?: { message?: string } } };
+                message = axiosErr.response?.data?.message || message;
+            }
+            setError(message);
+            addToast(message, 'error');
         } finally {
             setLoading(false);
         }

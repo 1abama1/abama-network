@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn, Trophy } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import axiosInstance from '../../api/axiosConfig';
+import { authService } from '../../api/services/authService';
+import { useToast } from '../../components/Common/Toast';
 import './Auth.css';
 
 const LoginPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { addToast } = useToast();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const [identifier, setIdentifier] = useState(location.state?.identifier || '');
   const [password, setPassword] = useState('');
@@ -17,23 +20,33 @@ const LoginPage = () => {
   const [success] = useState(location.state?.message || '');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const response = await axiosInstance.post('/auth/login', { identifier, password });
+      const response = await authService.login(identifier, password);
       const { user, accessToken, refreshToken } = response.data;
       login(user, accessToken, refreshToken);
       navigate('/');
-    } catch (err: any) {
-      const message = err.response?.data?.message || 'Login failed. Please check your credentials.';
+    } catch (err: unknown) {
+      let message = 'Login failed. Please check your credentials.';
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { message?: string } } };
+        message = axiosErr.response?.data?.message || message;
+      }
       setError(message);
+      addToast(message, 'error');
 
-      // If account is not verified, redirect to OTP page
       if (message.includes('не подтвержден') || message.includes('not verified')) {
-        setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
           navigate('/verify-otp', { state: { identifier } });
         }, 2000);
       }

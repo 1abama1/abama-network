@@ -2,21 +2,28 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Edit2, Award, UserPlus, UserMinus, Lock, Gamepad2, Calendar } from 'lucide-react';
-import axiosInstance from '../../api/axiosConfig';
+import { userService } from '../../api/services/userService';
+import { postService } from '../../api/services/postService';
+import { gameService } from '../../api/services/gameService';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/Common/Toast';
 import PostCard from '../../components/Feed/PostCard';
 import GameCard from '../../components/Games/GameCard';
 import StatRing from '../../components/Profile/StatRing';
 import EditProfileModal from '../../components/Profile/EditProfileModal';
+import type { Profile } from '../../types/user';
+import type { Post } from '../../types/post';
+import type { Game } from '../../types/game';
 import '../../components/Profile/Profile.css';
 
 const ProfilePage = () => {
   const { username } = useParams<{ username: string }>();
   const { user: currentUser } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
-  const [posts, setPosts] = useState<any[]>([]);
-  const [games, setGames] = useState<any[]>([]);
-  const [likedPosts, setLikedPosts] = useState<any[]>([]);
+  const { addToast } = useToast();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('posts');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -27,64 +34,64 @@ const ProfilePage = () => {
   const isOwnProfile = currentUser?.username === username;
 
   const fetchProfileData = useCallback(async () => {
+    if (!username) return;
     setLoading(true);
     try {
-      const profileRes = await axiosInstance.get(`/users/profile/${username}`);
+      const profileRes = await userService.getProfile(username);
       setProfile(profileRes.data);
-      
+
       try {
-        const postsRes = await axiosInstance.get(`/posts/user/${username}`);
+        const postsRes = await postService.getUserPosts(username);
         setPosts(postsRes.data.content || []);
       } catch (postError) {
-        console.error('Failed to fetch user posts', postError);
         setPosts([]);
       }
     } catch (error) {
-      console.error('Failed to fetch profile', error);
+      addToast('Failed to fetch profile', 'error');
       setProfile(null);
     } finally {
       setLoading(false);
     }
-  }, [username]);
+  }, [username, addToast]);
 
   const fetchGames = useCallback(async () => {
-    if (gamesLoaded) return;
+    if (gamesLoaded || !username) return;
     try {
-      const res = await axiosInstance.get(`/games/user/${username}`);
+      const res = await gameService.getUserGames(username);
       setGames(res.data || []);
       setGamesLoaded(true);
     } catch (error) {
-      console.error('Failed to fetch user games', error);
+      addToast('Failed to fetch games', 'error');
       setGames([]);
     }
-  }, [username, gamesLoaded]);
+  }, [username, gamesLoaded, addToast]);
 
   const fetchLikedPosts = useCallback(async () => {
-    if (likesLoaded) return;
+    if (likesLoaded || !username) return;
     try {
-      const res = await axiosInstance.get(`/posts/liked/${username}`);
+      const res = await postService.getLikedPosts(username);
       setLikedPosts(res.data.content || []);
       setLikesLoaded(true);
     } catch (error) {
-      console.error('Failed to fetch liked posts', error);
+      addToast('Failed to fetch liked posts', 'error');
       setLikedPosts([]);
     }
-  }, [username, likesLoaded]);
+  }, [username, likesLoaded, addToast]);
 
   const handleGameRegister = async (gameId: string | number) => {
-    const game = games.find((g: any) => g.id === gameId);
+    const game = games.find(g => g.id === gameId);
     if (!game) return;
-    
+
     try {
       if (game.isRegistered) {
-        await axiosInstance.delete(`/games/${gameId}/register`);
+        await gameService.unregisterFromGame(Number(gameId));
       } else {
-        await axiosInstance.post(`/games/${gameId}/register`);
+        await gameService.registerForGame(Number(gameId));
       }
       setGamesLoaded(false);
       fetchGames();
     } catch (error) {
-      console.error('Game registration failed', error);
+      addToast('Game registration failed', 'error');
     }
   };
 
@@ -98,32 +105,31 @@ const ProfilePage = () => {
 
   const handleFollow = async () => {
     if (isActionLoading || !profile) return;
-    
+
     const wasFollowing = profile.isFollowing;
     const oldFollowersCount = profile.followersCount;
-    
-    setProfile((prev: any) => ({
+
+    setProfile(prev => prev ? {
       ...prev,
       isFollowing: !wasFollowing,
       followersCount: wasFollowing ? oldFollowersCount - 1 : oldFollowersCount + 1
-    }));
-    
+    } : prev);
+
     setIsActionLoading(true);
     try {
       if (wasFollowing) {
-        await axiosInstance.delete(`/users/unfollow/${username}`);
+        await userService.unfollow(username!);
       } else {
-        await axiosInstance.post(`/users/follow/${username}`);
+        await userService.follow(username!);
       }
-      fetchProfileData(); 
+      fetchProfileData();
     } catch (error) {
-      setProfile((prev: any) => ({
+      setProfile(prev => prev ? {
         ...prev,
         isFollowing: wasFollowing,
         followersCount: oldFollowersCount
-      }));
-      console.error('Follow action failed', error);
-      alert("Failed to update follow status. Please try again.");
+      } : prev);
+      addToast('Failed to update follow status', 'error');
     } finally {
       setIsActionLoading(false);
     }
@@ -138,7 +144,7 @@ const ProfilePage = () => {
     }
   }, [username, fetchProfileData]);
 
-  const handleProfileUpdate = (updatedProfile: any) => {
+  const handleProfileUpdate = (updatedProfile: Profile) => {
     setProfile(updatedProfile);
   };
 
@@ -147,7 +153,7 @@ const ProfilePage = () => {
   return (
     <div className="profile-container">
       <div className="profile-header" />
-      
+
       <div className="profile-info-section">
         <div className="profile-actions-row">
           <div className="avatar-large">
@@ -159,28 +165,22 @@ const ProfilePage = () => {
               <span>Edit Profile</span>
             </button>
           ) : (
-            <button 
+            <button
               className={`btn-${profile?.isFollowing ? 'outline' : 'primary'}`}
               onClick={handleFollow}
               disabled={isActionLoading}
             >
               {profile?.isFollowing ? (
-                <>
-                  <UserMinus size={18} />
-                  <span>Unfollow</span>
-                </>
+                <><UserMinus size={18} /><span>Unfollow</span></>
               ) : (
-                <>
-                  <UserPlus size={18} />
-                  <span>Follow</span>
-                </>
+                <><UserPlus size={18} /><span>Follow</span></>
               )}
             </button>
           )}
         </div>
 
         <div className="profile-names">
-          <h2>{profile?.displayName || profile?.username || username || 'Baller'}</h2>
+          <h2>{profile?.username || username || 'Baller'}</h2>
           <span className="profile-handle">@{profile?.username || username}</span>
         </div>
 
@@ -189,31 +189,13 @@ const ProfilePage = () => {
         </p>
 
         <div className="player-stats-grid glass">
-          <StatRing 
-            label="Height" 
-            value={profile?.height || 0} 
-            unit="cm" 
-            percent={profile?.height ? Math.min(100, (profile.height / 230) * 100) : 0} 
-            color="#FF6B00"
-          />
-          <StatRing 
-            label="Weight" 
-            value={profile?.weight || 0} 
-            unit="kg" 
-            percent={profile?.weight ? Math.min(100, (profile.weight / 150) * 100) : 0} 
-            color="#FF8A00"
-          />
-          <StatRing 
-            label="Vert" 
-            value={profile?.jump || 0} 
-            unit="in" 
-            percent={profile?.jump ? Math.min(100, (profile.jump / 50) * 100) : 0} 
-            color="#FFB800"
-          />
+          <StatRing label="Height" value={profile?.height || 0} unit="cm" percent={profile?.height ? Math.min(100, (profile.height / 230) * 100) : 0} color="#FF6B00" />
+          <StatRing label="Weight" value={profile?.weight || 0} unit="kg" percent={profile?.weight ? Math.min(100, (profile.weight / 150) * 100) : 0} color="#FF8A00" />
+          <StatRing label="Vert" value={profile?.jump || 0} unit="in" percent={profile?.jump ? Math.min(100, (profile.jump / 50) * 100) : 0} color="#FFB800" />
           <div className="stat-summary">
             <div className="stat-item">
               <Award size={20} color="var(--primary)" />
-              <span>{profile?.positions?.length > 0 ? profile.positions.join(', ').replace(/_/g, ' ') : 'N/A'}</span>
+              <span>{(profile?.positions?.length ?? 0) > 0 ? profile!.positions!.join(', ').replace(/_/g, ' ') : 'N/A'}</span>
             </div>
           </div>
         </div>
@@ -225,99 +207,48 @@ const ProfilePage = () => {
       </div>
 
       <div className="profile-tabs">
-        <button 
-          className={`tab ${activeTab === 'posts' ? 'active' : ''}`}
-          onClick={() => setActiveTab('posts')}
-        >
-          Posts
-        </button>
-        <button 
-          className={`tab ${activeTab === 'games' ? 'active' : ''}`}
-          onClick={() => setActiveTab('games')}
-        >
-          <Gamepad2 size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-          Games
+        <button className={`tab ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>Posts</button>
+        <button className={`tab ${activeTab === 'games' ? 'active' : ''}`} onClick={() => setActiveTab('games')}>
+          <Gamepad2 size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />Games
         </button>
         {isOwnProfile && (
-          <button 
-            className={`tab ${activeTab === 'likes' ? 'active' : ''}`}
-            onClick={() => setActiveTab('likes')}
-          >
-            <Lock size={14} style={{ marginRight: '6px', verticalAlign: 'middle', opacity: 0.6 }} />
-            Likes
+          <button className={`tab ${activeTab === 'likes' ? 'active' : ''}`} onClick={() => setActiveTab('likes')}>
+            <Lock size={14} style={{ marginRight: '6px', verticalAlign: 'middle', opacity: 0.6 }} />Likes
           </button>
         )}
       </div>
 
       <div className="profile-posts">
         <AnimatePresence mode="popLayout">
-          {activeTab === 'posts' && posts.map((post: any) => (
-            <PostCard 
-              key={post.id} 
-              post={post} 
-              onUpdate={fetchProfileData} 
-            />
+          {activeTab === 'posts' && posts.map((post) => (
+            <PostCard key={post.id} post={post} onUpdate={fetchProfileData} />
           ))}
-
           {activeTab === 'posts' && posts.length === 0 && (
-            <motion.div 
-              className="empty-tab-state"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <p>No posts yet</p>
-            </motion.div>
+            <motion.div className="empty-tab-state" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}><p>No posts yet</p></motion.div>
           )}
 
-          {activeTab === 'games' && games.map((game: any) => (
-            <GameCard 
-              key={game.id} 
-              game={game} 
-              onRegister={handleGameRegister}
-            />
+          {activeTab === 'games' && games.map((game) => (
+            <GameCard key={game.id} game={game} onRegister={handleGameRegister} />
           ))}
-
           {activeTab === 'games' && games.length === 0 && gamesLoaded && (
-            <motion.div 
-              className="empty-tab-state"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
+            <motion.div className="empty-tab-state" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <Calendar size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
               <p>{isOwnProfile ? "You haven't joined any games yet" : "This baller hasn't joined any games yet"}</p>
             </motion.div>
           )}
 
-          {activeTab === 'likes' && likedPosts.map((post: any) => (
-            <PostCard 
-              key={post.id} 
-              post={post} 
-              onUpdate={() => {
-                setLikesLoaded(false);
-                fetchLikedPosts();
-              }} 
-            />
+          {activeTab === 'likes' && likedPosts.map((post) => (
+            <PostCard key={post.id} post={post} onUpdate={() => { setLikesLoaded(false); fetchLikedPosts(); }} />
           ))}
-
           {activeTab === 'likes' && likedPosts.length === 0 && likesLoaded && (
-            <motion.div 
-              className="empty-tab-state"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <p>No liked posts yet</p>
-            </motion.div>
+            <motion.div className="empty-tab-state" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}><p>No liked posts yet</p></motion.div>
           )}
         </AnimatePresence>
       </div>
 
       <AnimatePresence>
         {isEditModalOpen && (
-          <EditProfileModal 
-            profile={profile} 
-            onClose={() => setIsEditModalOpen(false)} 
-            onSave={handleProfileUpdate}
-          />
+          <EditProfileModal profile={profile} onClose={() => setIsEditModalOpen(false)} onSave={handleProfileUpdate} />
         )}
       </AnimatePresence>
     </div>

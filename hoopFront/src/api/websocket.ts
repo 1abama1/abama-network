@@ -21,7 +21,6 @@ class WebSocketService {
                 reconnectDelay: 5000,
                 onConnect: () => {
                     console.log('Connected to WebSocket');
-                    // Process pending subscriptions
                     this.pendingSubscriptions.forEach(({ dest, cb }) => this.doSubscribe(dest, cb));
                     this.pendingSubscriptions = [];
                     resolve();
@@ -39,13 +38,12 @@ class WebSocketService {
         if (this.client?.connected) {
             this.doSubscribe(destination, callback);
         } else {
-            // Delay until connected to fix race conditions
             this.pendingSubscriptions.push({ dest: destination, cb: callback });
         }
     }
 
     private doSubscribe(destination: string, callback: MessageCallback): void {
-        if (this.subscriptions.has(destination)) return; // Avoid duplicate subs
+        if (this.subscriptions.has(destination)) return;
         const sub = this.client!.subscribe(destination, (msg) => {
             if (msg.body) {
                 callback(JSON.parse(msg.body));
@@ -68,6 +66,10 @@ class WebSocketService {
         }
     }
 
+    getClient(): Client | null {
+        return this.client;
+    }
+
     disconnect(): void {
         this.client?.deactivate();
         this.client = null;
@@ -80,7 +82,6 @@ class WebSocketService {
     }
 }
 
-// Singleton
 export const wsService = new WebSocketService();
 
 export const initWebSocket = async (): Promise<void> => {

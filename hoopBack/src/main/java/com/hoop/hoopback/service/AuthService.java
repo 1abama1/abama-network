@@ -8,19 +8,21 @@ import com.hoop.hoopback.entity.Role;
 import com.hoop.hoopback.entity.User;
 import com.hoop.hoopback.event.UserRegisteredEvent;
 import com.hoop.hoopback.exception.InvalidCredentialsException;
+import com.hoop.hoopback.exception.ResourceNotFoundException;
 import com.hoop.hoopback.exception.TokenRefreshException;
 import com.hoop.hoopback.exception.UserAlreadyExistsException;
 import com.hoop.hoopback.repository.UserRepository;
 import com.hoop.hoopback.security.JwtService;
-import jakarta.servlet.http.HttpServletRequest;
+import com.hoop.hoopback.security.SecurityUserAdapter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final ApplicationEventPublisher eventPublisher;
     private final OtpService otpService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Transactional
     public MessageResponse register(RegisterRequest request) {
@@ -73,8 +76,8 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(user.getUsername(), request.password())
         );
 
-        String jwtToken = jwtService.generateToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        String jwtToken = jwtService.generateToken(new SecurityUserAdapter(user));
+        String refreshToken = jwtService.generateRefreshToken(new SecurityUserAdapter(user));
 
         return AuthResponse.builder()
                 .accessToken(jwtToken)
@@ -107,7 +110,7 @@ public class AuthService {
     @Transactional
     public MessageResponse requestForgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new InvalidCredentialsException("Пользователь с таким email не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с таким email не найден"));
         
         otpService.generateAndSendOtp(user);
         
@@ -124,7 +127,7 @@ public class AuthService {
         // После успешной верификации
         User user = userRepository.findByEmail(request.identifier())
                 .orElseGet(() -> userRepository.findByUsernameIgnoreCase(request.identifier())
-                        .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден")));
+                        .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден")));
         
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
@@ -134,16 +137,8 @@ public class AuthService {
                 .build();
     }
 
-    public AuthResponse refreshToken(HttpServletRequest request) {
-        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        final String refreshToken;
+    public AuthResponse refreshToken(String refreshToken) {
         final String identifier;
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new TokenRefreshException("Refresh токен отсутствует в заголовке Authorization");
-        }
-
-        refreshToken = authHeader.substring(7);
         try {
             identifier = jwtService.extractUsername(refreshToken);
         } catch (Exception e) {
@@ -155,8 +150,9 @@ public class AuthService {
                     .orElseGet(() -> userRepository.findByUsernameIgnoreCase(identifier)
                     .orElseThrow(() -> new TokenRefreshException("Пользователь не найден")));
 
-            if (jwtService.isTokenValid(refreshToken, userDetails)) {
-                String accessToken = jwtService.generateToken(userDetails);
+            SecurityUserAdapter adapter = new SecurityUserAdapter(userDetails);
+            if (jwtService.isTokenValid(refreshToken, adapter)) {
+                String accessToken = jwtService.generateToken(adapter);
                 return AuthResponse.builder()
                         .accessToken(accessToken)
                         .refreshToken(refreshToken)
@@ -177,7 +173,12 @@ public class AuthService {
     @Transactional
     public MessageResponse changePassword(String currentUsername, PasswordResetRequest request) {
         User user = userRepository.findByUsernameIgnoreCase(currentUsername)
-                .orElseThrow(() -> new InvalidCredentialsException("Пользователь не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+
+        if (request.currentPassword() != null &&
+                !passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new InvalidCredentialsException("Неверный текущий пароль");
+        }
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
@@ -185,5 +186,15 @@ public class AuthService {
         return MessageResponse.builder()
                 .message("Пароль успешно изменен")
                 .build();
+    }
+
+    public MessageResponse logout(String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String jwt = authHeader.substring(7);
+            String jti = jwtService.extractJti(jwt);
+            Date exp  = jwtService.extractExpiration(jwt);
+            tokenBlacklistService.blacklist(jti, exp);
+        }
+        return MessageResponse.builder().message("Logged out").build();
     }
 }

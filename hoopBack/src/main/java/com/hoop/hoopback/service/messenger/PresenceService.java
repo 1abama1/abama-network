@@ -3,10 +3,10 @@ package com.hoop.hoopback.service.messenger;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.hoop.hoopback.dto.messenger.PresenceEvent;
+import com.hoop.hoopback.service.push.MessagePushService;
 
 import java.time.Duration;
 import java.util.Set;
@@ -14,15 +14,12 @@ import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Управляет онлайн-статусом пользователей через Redis.
- */
 @Service
 @RequiredArgsConstructor
 public class PresenceService {
 
     private final RedisTemplate<String, String> redis;
-    private final SimpMessagingTemplate messaging;
+    private final MessagePushService pushService;
 
     private static final Duration TTL = Duration.ofSeconds(70);
     private static final String PREFIX = "presence:";
@@ -33,7 +30,7 @@ public class PresenceService {
         Boolean isNew = redis.opsForValue().setIfAbsent(key, "1", TTL);
         redis.expire(key, TTL);
         if (Boolean.TRUE.equals(isNew)) {
-            messaging.convertAndSend(TOPIC, new PresenceEvent(username, true));
+            pushService.pushToUser(username, TOPIC, new PresenceEvent(username, true));
         }
     }
 
@@ -41,7 +38,7 @@ public class PresenceService {
         String key = PREFIX + username;
         Boolean existed = redis.delete(key);
         if (Boolean.TRUE.equals(existed)) {
-            messaging.convertAndSend(TOPIC, new PresenceEvent(username, false));
+            pushService.pushToUser(username, TOPIC, new PresenceEvent(username, false));
         }
     }
 
@@ -50,7 +47,6 @@ public class PresenceService {
     }
 
     public Set<String> getOnlineFrom(Set<String> usernames) {
-        // Pipeline with explicit cast to fix ambiguity in Java 21
         List<Object> result = redis.executePipelined((RedisCallback<Object>) connection -> {
             for (String u : usernames) {
                 connection.keyCommands().exists(redis.getStringSerializer().serialize(PREFIX + u));

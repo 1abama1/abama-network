@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Send } from 'lucide-react';
-import axiosInstance from '../../api/axiosConfig';
+import { commentService } from '../../api/services/commentService';
+import { useToast } from '../../components/Common/Toast';
 
 interface CommentModalProps {
-  postId: string;
+  postId: number;
   onClose: () => void;
   onCommentAdded: () => void;
 }
@@ -12,6 +13,7 @@ interface CommentModalProps {
 const CommentModal = ({ postId, onClose, onCommentAdded }: CommentModalProps) => {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const { addToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,11 +21,12 @@ const CommentModal = ({ postId, onClose, onCommentAdded }: CommentModalProps) =>
 
     setLoading(true);
     try {
-      await axiosInstance.post(`/posts/${postId}/comment`, { content });
+      await commentService.addComment(postId, content);
       onCommentAdded();
       onClose();
     } catch (error) {
       console.error('Failed to add comment', error);
+      addToast('Failed to add comment. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -31,7 +34,7 @@ const CommentModal = ({ postId, onClose, onCommentAdded }: CommentModalProps) =>
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="modal-content glass"
@@ -44,7 +47,7 @@ const CommentModal = ({ postId, onClose, onCommentAdded }: CommentModalProps) =>
         </div>
 
         <form onSubmit={handleSubmit} className="edit-profile-form">
-          <textarea 
+          <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Post your reply..."
