@@ -15,7 +15,7 @@ const VerifyOtpPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const identifier = location.state?.identifier || '';
 
   useEffect(() => {

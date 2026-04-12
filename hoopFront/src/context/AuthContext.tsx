@@ -2,10 +2,12 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { tokenStorage } from '../utils/tokenStorage';
 
 interface User {
-  id: string;
+  id: number;
   username: string;
-  email: string;
-  avatarUrl?: string;
+  positions: string[] | null;
+  height: number | null;
+  followersCount: number;
+  bio: string | null;
 }
 
 interface AuthContextType {

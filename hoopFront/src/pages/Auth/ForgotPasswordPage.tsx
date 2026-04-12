@@ -17,7 +17,7 @@ const ForgotPasswordPage = () => {
     const [success, setSuccess] = useState('');
     const navigate = useNavigate();
     const { addToast } = useToast();
-    const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     useEffect(() => {
         return () => {

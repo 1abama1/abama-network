@@ -12,7 +12,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { addToast } = useToast();
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const [identifier, setIdentifier] = useState(location.state?.identifier || '');
   const [password, setPassword] = useState('');

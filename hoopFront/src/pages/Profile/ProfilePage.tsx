@@ -247,7 +247,7 @@ const ProfilePage = () => {
       </div>
 
       <AnimatePresence>
-        {isEditModalOpen && (
+        {isEditModalOpen && profile && (
           <EditProfileModal profile={profile} onClose={() => setIsEditModalOpen(false)} onSave={handleProfileUpdate} />
         )}
       </AnimatePresence>

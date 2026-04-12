@@ -8,7 +8,7 @@ import { tokenStorage } from '../../utils/tokenStorage';
 import { conversationService } from '../../api/services/conversationService';
 import { useToast } from '../../components/Common/Toast';
 import type { UserSummary } from '../../types/user';
-import type { Conversation, Message } from '../../types/messenger';
+import type { Message } from '../../types/messenger';
 import './Messages.css';
 
 const ChatPage = () => {
@@ -33,8 +33,7 @@ const ChatPage = () => {
     addMessage,
     markConvRead,
     setLoading,
-    addConversation,
-    markMessageError
+    addConversation
   } = useMessengerStore();
 
   const token = tokenStorage.getAccessToken();
@@ -124,6 +123,7 @@ const ChatPage = () => {
         senderUsername: currentUser.username,
         content,
         sentAt: new Date().toISOString(),
+        readAt: null,
         pending: true,
         clientTempId: tempId,
       };

@@ -27,6 +27,7 @@ describe('messengerStore', () => {
             senderUsername: 'bob',
             content: 'Hello',
             sentAt: new Date().toISOString(),
+            readAt: null,
             pending: false,
         };
 
