@@ -34,7 +34,7 @@ public class User {
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean isEnabled = false;
+    private boolean isEnabled = true;
 
     private String bio;
 

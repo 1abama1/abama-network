@@ -36,12 +36,6 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", ex.getMessage()));
     }
 
-    @ExceptionHandler(TooManyOtpAttemptsException.class)
-    public ResponseEntity<?> handleTooManyOtpAttemptsException(TooManyOtpAttemptsException ex) {
-        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(Map.of("message", ex.getMessage()));
-    }
-
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)

@@ -6,8 +6,6 @@ import './index.css';
 
 const LoginPage = React.lazy(() => import('./pages/Auth/LoginPage'));
 const RegisterPage = React.lazy(() => import('./pages/Auth/RegisterPage'));
-const VerifyOtpPage = React.lazy(() => import('./pages/Auth/VerifyOtpPage'));
-const ForgotPasswordPage = React.lazy(() => import('./pages/Auth/ForgotPasswordPage'));
 const HomeFeed = React.lazy(() => import('./pages/Feed/HomeFeed'));
 const ExplorePage = React.lazy(() => import('./pages/Feed/ExplorePage'));
 const PostDetailPage = React.lazy(() => import('./pages/Feed/PostDetailPage'));
@@ -39,8 +37,6 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/verify-otp" element={<VerifyOtpPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
           <Route path="/" element={<PrivateRoute><HomeFeed /></PrivateRoute>} />
           <Route path="/post/:postId" element={<PrivateRoute><PostDetailPage /></PrivateRoute>} />

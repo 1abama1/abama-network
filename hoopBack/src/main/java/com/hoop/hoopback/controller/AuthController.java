@@ -1,6 +1,8 @@
 package com.hoop.hoopback.controller;
 
-import com.hoop.hoopback.dto.request.*;
+import com.hoop.hoopback.dto.request.LoginRequest;
+import com.hoop.hoopback.dto.request.PasswordResetRequest;
+import com.hoop.hoopback.dto.request.RegisterRequest;
 import com.hoop.hoopback.dto.response.AuthResponse;
 import com.hoop.hoopback.dto.response.MessageResponse;
 import com.hoop.hoopback.service.AuthService;
@@ -27,26 +29,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
-    }
-
-    @PostMapping("/verify-otp")
-    public ResponseEntity<MessageResponse> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
-        return ResponseEntity.ok(authService.verifyOtp(request.identifier(), request.code()));
-    }
-
-    @PostMapping("/resend-otp")
-    public ResponseEntity<MessageResponse> resendOtp(@Valid @RequestBody ResendOtpRequest request) {
-        return ResponseEntity.ok(authService.resendOtp(request.identifier()));
-    }
-
-    @PostMapping("/forgot-password")
-    public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        return ResponseEntity.ok(authService.requestForgotPassword(request));
-    }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        return ResponseEntity.ok(authService.resetPassword(request));
     }
 
     @PostMapping("/refresh")

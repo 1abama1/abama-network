@@ -30,7 +30,7 @@ const RegisterPage = () => {
     setLoading(true);
     try {
       await authService.register(formData.username, formData.email, formData.password);
-      navigate('/verify-otp', { state: { identifier: formData.email } });
+      navigate('/login', { state: { message: 'Registration successful! You can now login.', identifier: formData.email } });
     } catch (err: unknown) {
       let message = 'Registration failed. Try again.';
       if (typeof err === 'object' && err !== null && 'response' in err) {

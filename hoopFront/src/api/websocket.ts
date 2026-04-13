@@ -1,5 +1,4 @@
 import { Client, type StompSubscription } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 
 type MessageCallback = (msg: any) => void;
 
@@ -15,8 +14,11 @@ class WebSocketService {
                 return;
             }
 
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const brokerURL = `${protocol}//${window.location.host}/ws`;
+
             this.client = new Client({
-                webSocketFactory: () => new SockJS('/ws') as WebSocket,
+                brokerURL,
                 connectHeaders: { Authorization: `Bearer ${token}` },
                 reconnectDelay: 5000,
                 onConnect: () => {

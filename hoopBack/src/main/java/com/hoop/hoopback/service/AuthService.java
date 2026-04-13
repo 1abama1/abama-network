@@ -1,12 +1,13 @@
 package com.hoop.hoopback.service;
 
-import com.hoop.hoopback.dto.request.*;
+import com.hoop.hoopback.dto.request.LoginRequest;
+import com.hoop.hoopback.dto.request.PasswordResetRequest;
+import com.hoop.hoopback.dto.request.RegisterRequest;
 import com.hoop.hoopback.dto.response.AuthResponse;
 import com.hoop.hoopback.dto.response.MessageResponse;
 import com.hoop.hoopback.dto.response.UserSummaryDto;
 import com.hoop.hoopback.entity.Role;
 import com.hoop.hoopback.entity.User;
-import com.hoop.hoopback.event.UserRegisteredEvent;
 import com.hoop.hoopback.exception.InvalidCredentialsException;
 import com.hoop.hoopback.exception.ResourceNotFoundException;
 import com.hoop.hoopback.exception.TokenRefreshException;
@@ -15,7 +16,6 @@ import com.hoop.hoopback.repository.UserRepository;
 import com.hoop.hoopback.security.JwtService;
 import com.hoop.hoopback.security.SecurityUserAdapter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,8 +32,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final ApplicationEventPublisher eventPublisher;
-    private final OtpService otpService;
     private final TokenBlacklistService tokenBlacklistService;
 
     @Transactional
@@ -50,16 +48,13 @@ public class AuthService {
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.USER)
-                .isEnabled(false) // Ждем подтверждения OTP
+                .isEnabled(true)
                 .build();
 
         userRepository.save(user);
 
-        // Публикуем событие
-        eventPublisher.publishEvent(new UserRegisteredEvent(this, user));
-
         return MessageResponse.builder()
-                .message("Пользователь успешно зарегистрирован. OTP код отправлен.")
+                .message("Пользователь успешно зарегистрирован.")
                 .build();
     }
 
@@ -67,10 +62,6 @@ public class AuthService {
         User user = userRepository.findByEmail(request.identifier())
                 .orElseGet(() -> userRepository.findByUsernameIgnoreCase(request.identifier())
                         .orElseThrow(() -> new InvalidCredentialsException("Неверные учетные данные")));
-
-        if (!user.isEnabled()) {
-            throw new InvalidCredentialsException("Аккаунт не подтвержден. Пожалуйста, подтвердите OTP код.");
-        }
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(user.getUsername(), request.password())
@@ -90,50 +81,6 @@ public class AuthService {
                         user.getFollowersCount() != null ? user.getFollowersCount() : 0L,
                         user.getBio()
                 ))
-                .build();
-    }
-
-    public MessageResponse verifyOtp(String identifier, String code) {
-        otpService.verifyOtp(identifier, code);
-        return MessageResponse.builder()
-                .message("Аккаунт успешно подтвержден!")
-                .build();
-    }
-
-    public MessageResponse resendOtp(String identifier) {
-        otpService.resendOtp(identifier);
-        return MessageResponse.builder()
-                .message("Новый OTP код отправлен.")
-                .build();
-    }
-
-    @Transactional
-    public MessageResponse requestForgotPassword(ForgotPasswordRequest request) {
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с таким email не найден"));
-        
-        otpService.generateAndSendOtp(user);
-        
-        return MessageResponse.builder()
-                .message("Код для сброса пароля отправлен на ваш email.")
-                .build();
-    }
-
-    @Transactional
-    public MessageResponse resetPassword(ResetPasswordRequest request) {
-        // Проверяем OTP
-        otpService.verifyOtp(request.identifier(), request.code());
-        
-        // После успешной верификации
-        User user = userRepository.findByEmail(request.identifier())
-                .orElseGet(() -> userRepository.findByUsernameIgnoreCase(request.identifier())
-                        .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден")));
-        
-        user.setPassword(passwordEncoder.encode(request.newPassword()));
-        userRepository.save(user);
-        
-        return MessageResponse.builder()
-                .message("Пароль успешно изменен.")
                 .build();
     }
 

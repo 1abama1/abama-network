@@ -1,13 +1,11 @@
 package com.hoop.hoopback.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
-/**
- * Controller to handle Single Page Application (SPA) routing.
- * Any request that is not for the API, WebSocket, or static files (with dots)
- * will be forwarded to index.html.
- */
 @Controller
 public class SpaController {
 
@@ -16,10 +14,11 @@ public class SpaController {
             "/*/{path:[^\\.]*}",
             "/**/{path:[^\\.]*}"
     })
-    public String forward() {
-        // Exclude API, WebSocket, and static assets from being caught by the SPA forwarder
-        // Note: Spring Security will handle the actual access control, but we must
-        // ensure we don't accidentally forward /api calls to index.html
+    public String forward(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri.startsWith("/ws") || uri.startsWith("/api")) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
         return "forward:/index.html";
     }
 }

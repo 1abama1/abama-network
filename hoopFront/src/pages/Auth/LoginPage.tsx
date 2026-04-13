@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn, Trophy } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -12,19 +12,12 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { addToast } = useToast();
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const [identifier, setIdentifier] = useState(location.state?.identifier || '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success] = useState(location.state?.message || '');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,12 +37,6 @@ const LoginPage = () => {
       }
       setError(message);
       addToast(message, 'error');
-
-      if (message.includes('не подтвержден') || message.includes('not verified')) {
-        timeoutRef.current = setTimeout(() => {
-          navigate('/verify-otp', { state: { identifier } });
-        }, 2000);
-      }
     } finally {
       setLoading(false);
     }
@@ -113,10 +100,6 @@ const LoginPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-          </div>
-
-          <div className="forgot-password">
-            <Link to="/forgot-password">Forgot password?</Link>
           </div>
 
           <button type="submit" className="btn-primary" disabled={loading}>
