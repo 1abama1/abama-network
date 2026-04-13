@@ -39,9 +39,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/", "/index.html", "/index.htm", "/assets/**", "/static/**", "/*.ico",
                                 "/*.js", "/*.css", "/*.json", "/*.png", "/*.svg", "/favicon.ico").permitAll()
-                        .requestMatchers("/{path:[^\\.]*}").permitAll()
-                        .requestMatchers("/*/{path:[^\\.]*}").permitAll()
-                        .requestMatchers("/**/{path:[^\\.]*}").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
