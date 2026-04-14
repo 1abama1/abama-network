@@ -12,7 +12,7 @@ public record GameDto(
         LocalDateTime dateTime,
         Integer minPlayers,
         Integer maxPlayers,
-        int playersCount,
+        int playerCount,
         List<UserSummaryDto> players,
         boolean isRegistered) implements java.io.Serializable {
 }
