@@ -1,0 +1,251 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CreateGameModal
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Overlay ───────────────────────────────────────────────────────────────── */
+.cg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: var(--z-modal, 2000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ── Modal card ────────────────────────────────────────────────────────────── */
+.cg-modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  border-radius: var(--radius-lg);
+  padding: 0;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+.cg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cg-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cg-header-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 107, 0, 0.1);
+  border: 1px solid rgba(255, 107, 0, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.cg-header h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.cg-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.cg-close:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+/* ── Form ──────────────────────────────────────────────────────────────────── */
+.cg-form {
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cg-error {
+  background: rgba(255, 75, 75, 0.08);
+  border: 1px solid rgba(255, 75, 75, 0.2);
+  color: var(--accent-red);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* ── Fields ─────────────────────────────────────────────────────────────────── */
+.cg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cg-field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cg-field input,
+.cg-field textarea {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 11px 14px;
+  color: var(--text);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: var(--font-main);
+}
+
+.cg-field input:focus,
+.cg-field textarea:focus {
+  border-color: var(--primary);
+}
+
+.cg-field input::placeholder,
+.cg-field textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.cg-field textarea {
+  min-height: 88px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* ── 3-column row ──────────────────────────────────────────────────────────── */
+.cg-row-3 {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+}
+
+.cg-row-3 .cg-field input[type="number"] {
+  width: 72px;
+  text-align: center;
+}
+
+/* ── Actions ────────────────────────────────────────────────────────────────── */
+.cg-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.cg-btn-cancel {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.cg-btn-cancel:hover:not(:disabled) {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.cg-btn-cancel:disabled {
+  opacity: 0.4;
+}
+
+.cg-btn-submit {
+  background: var(--primary);
+  color: #000;
+  border: none;
+  padding: 10px 22px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.cg-btn-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+
+.cg-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .cg-overlay {
+    padding: 0;
+  }
+
+  .cg-modal {
+    max-width: 100%;
+    max-height: 100dvh;
+    border-radius: 0;
+    min-height: 100dvh;
+  }
+
+  .cg-header {
+    padding-top: max(20px, env(safe-area-inset-top));
+  }
+
+  .cg-form {
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+
+  .cg-row-3 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .cg-row-3 .cg-field input[type="number"] {
+    width: 100%;
+    text-align: left;
+  }
+
+  .cg-actions {
+    flex-direction: column;
+  }
+
+  .cg-btn-cancel,
+  .cg-btn-submit {
+    width: 100%;
+    justify-content: center;
+    padding: 14px;
+  }
+}
