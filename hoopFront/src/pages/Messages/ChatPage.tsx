@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Search, MapPin, Info, MessageCircle } from 'lucide-react';
+import { Send, Search, ArrowLeft, Info, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useMessengerStore } from '../../store/messengerStore';
 import { useMessengerSocket } from '../../hooks/useMessengerSocket';
@@ -33,7 +33,7 @@ const ChatPage = () => {
     addMessage,
     markConvRead,
     setLoading,
-    addConversation
+    addConversation,
   } = useMessengerStore();
 
   const token = tokenStorage.getAccessToken();
@@ -45,11 +45,11 @@ const ChatPage = () => {
       try {
         const [convsRes, mutualsRes] = await Promise.all([
           conversationService.getConversations(),
-          conversationService.getMutuals()
+          conversationService.getMutuals(),
         ]);
         setConversations(convsRes.data);
         setMutuals(mutualsRes.data);
-      } catch (err) {
+      } catch {
         addToast('Failed to load messenger', 'error');
       } finally {
         setLoading(false);
@@ -63,14 +63,14 @@ const ChatPage = () => {
     setTargetPartner(null);
 
     const fetchMessages = async () => {
-      const currentChat = conversations.find(c => c.id === activeConvId);
+      const currentChat = conversations.find((c) => c.id === activeConvId);
 
       if (!messagesByConv[activeConvId]) {
         try {
           const res = await conversationService.getMessages(activeConvId, 50);
           const msgs: Message[] = res.data;
           prependMessages(activeConvId, msgs, msgs.length === 50);
-        } catch (err) {
+        } catch {
           addToast('Failed to load messages', 'error');
         }
       }
@@ -79,7 +79,7 @@ const ChatPage = () => {
         try {
           await conversationService.markRead(activeConvId);
           markConvRead(activeConvId);
-        } catch (err) {
+        } catch {
           addToast('Failed to mark read', 'error');
         }
       }
@@ -129,7 +129,7 @@ const ChatPage = () => {
       };
       addMessage(optimistic);
 
-      const activeChat = conversations.find(c => c.id === activeConvId);
+      const activeChat = conversations.find((c) => c.id === activeConvId);
       sendMessage(activeChat?.partnerUsername || '', content, tempId);
     } else if (targetPartner) {
       try {
@@ -146,14 +146,14 @@ const ChatPage = () => {
         });
 
         setActiveConv(newMsg.conversationId);
-      } catch (err) {
+      } catch {
         addToast('Failed to start conversation', 'error');
       }
     }
   };
 
   const handleStartConversation = (partnerUsername: string) => {
-    const existing = conversations.find(c => c.partnerUsername === partnerUsername);
+    const existing = conversations.find((c) => c.partnerUsername === partnerUsername);
     if (existing) {
       setActiveConv(existing.id);
     } else {
@@ -162,15 +162,15 @@ const ChatPage = () => {
     }
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatTime = (dateStr: string) => {
     const d = new Date(dateStr);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const activeChat = conversations.find(c => c.id === activeConvId);
-  const typingUsers = activeConvId ? (typingByConv[activeConvId] || []) : [];
+  const activeChat = conversations.find((c) => c.id === activeConvId);
+  const typingUsers = activeConvId ? typingByConv[activeConvId] || [] : [];
   const isTyping = typingUsers.length > 0;
-  const currentMessages = activeConvId ? (messagesByConv[activeConvId] || []) : [];
+  const currentMessages = activeConvId ? messagesByConv[activeConvId] || [] : [];
 
   useEffect(() => {
     if (activeConvId && currentMessages.length > 0) {
@@ -178,15 +178,21 @@ const ChatPage = () => {
     }
   }, [activeConvId, currentMessages.length]);
 
-  if (loading) return <div className="feed-loading"><div className="basketball-spinner" /></div>;
+  if (loading)
+    return (
+      <div className="feed-loading">
+        <div className="basketball-spinner" />
+      </div>
+    );
 
   return (
-    <div className={`chat-container ${activeConvId ? 'chat-active' : ''}`}>
-      <div className="chat-sidebar glass">
+    <div className={`chat-container${activeConvId ? ' chat-active' : ''}`}>
+      {/* ── Sidebar ──────────────────────────────────────────────────── */}
+      <aside className="chat-sidebar glass">
         <div className="chat-sidebar-header">
           <h2>Messages</h2>
           <div className="search-chats">
-            <Search size={18} />
+            <Search size={16} />
             <input
               type="text"
               placeholder="Search chats..."
@@ -195,37 +201,40 @@ const ChatPage = () => {
             />
           </div>
         </div>
+
         <div className="chats-list">
-          {Array.isArray(mutuals) && mutuals.length > 0 && !searchTerm && (
+          {mutuals.length > 0 && !searchTerm && (
             <div className="mutuals-bar">
               <span className="section-title">Active Now</span>
               <div className="mutuals-scroll">
-                {mutuals.map(m => (
-                  <motion.div
+                {mutuals.map((m) => (
+                  <div
                     key={m.username}
                     className="mutual-item"
-                    whileHover={{ scale: 1.05 }}
                     onClick={() => handleStartConversation(m.username)}
                   >
                     <div className="mutual-avatar-wrap">
-                      <div className="chat-avatar small">{m.username.charAt(0).toUpperCase()}</div>
+                      <div className="chat-avatar small">
+                        {m.username.charAt(0).toUpperCase()}
+                      </div>
                       <div className="status-ring" />
                     </div>
                     <span className="mutual-name">{m.username}</span>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
           )}
 
-          {Array.isArray(conversations) && conversations
-            .filter(c => c.partnerUsername?.toLowerCase().includes(searchTerm.toLowerCase()))
+          {conversations
+            .filter((c) =>
+              c.partnerUsername?.toLowerCase().includes(searchTerm.toLowerCase()),
+            )
             .map((chat) => (
-              <motion.div
+              <div
                 key={chat.id}
-                className={`chat-item ${activeConvId === chat.id ? 'active' : ''}`}
+                className={`chat-item${activeConvId === chat.id ? ' active' : ''}`}
                 onClick={() => setActiveConv(chat.id)}
-                whileHover={{ x: 5 }}
               >
                 <div className="chat-avatar">
                   {chat.partnerUsername.charAt(0).toUpperCase()}
@@ -233,16 +242,21 @@ const ChatPage = () => {
                 <div className="chat-info">
                   <div className="chat-name-row">
                     <span className="chat-name">{chat.partnerUsername}</span>
-                    {chat.unreadCount > 0 && <span className="unread-badge">{chat.unreadCount}</span>}
+                    {chat.unreadCount > 0 && (
+                      <span className="unread-badge">{chat.unreadCount}</span>
+                    )}
                   </div>
-                  <p className="last-message truncate">{chat.lastMessage || 'No messages yet'}</p>
+                  <p className="last-message">
+                    {chat.lastMessage || 'No messages yet'}
+                  </p>
                 </div>
-              </motion.div>
+              </div>
             ))}
         </div>
-      </div>
+      </aside>
 
-      <div className="chat-main page-transition">
+      {/* ── Main chat ─────────────────────────────────────────────────── */}
+      <div className="chat-main">
         {activeChat || targetPartner ? (
           <>
             <header className="chat-header">
@@ -251,39 +265,56 @@ const ChatPage = () => {
                   className="mobile-back-btn"
                   onClick={() => setActiveConv(null)}
                 >
-                  ←
+                  <ArrowLeft size={22} />
                 </button>
-                <MapPin size={20} className="text-primary hide-mobile" />
+                <div className="chat-avatar small">
+                  {(activeChat?.partnerUsername || targetPartner || '')
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
                 <h3>{activeChat?.partnerUsername || targetPartner}</h3>
-                {activeChat?.partnerOnline && <span className="status-ring online-dot" />}
+                {activeChat?.partnerOnline && (
+                  <span className="online-dot" />
+                )}
               </div>
               <div className="chat-header-actions">
-                <motion.button whileHover={{ scale: 1.1 }} className="action-circle-btn small"><Info size={18} /></motion.button>
+                <button className="btn-premium-icon">
+                  <Info size={16} />
+                </button>
               </div>
             </header>
 
             <div className="messages-area">
               <AnimatePresence>
-                {Array.isArray(currentMessages) && currentMessages.map((msg, idx) => (
+                {currentMessages.map((msg, idx) => (
                   <motion.div
                     key={msg.id || idx}
-                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className={`message-wrapper ${msg.senderUsername === currentUser?.username ? 'own' : 'other'}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className={`message-wrapper${
+                      msg.senderUsername === currentUser?.username
+                        ? ' own'
+                        : ' other'
+                    }`}
                   >
-                    <div className="message-bubble glass-card">
+                    <div
+                      className={`message-bubble${msg.pending ? ' pending' : ''}${
+                        msg.error ? ' error' : ''
+                      }`}
+                    >
                       {msg.content}
                     </div>
-                    <span className="send-time">{formatDate(msg.sentAt)}</span>
+                    <span className="send-time">{formatTime(msg.sentAt)}</span>
                   </motion.div>
                 ))}
               </AnimatePresence>
 
               {isTyping && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
+                  exit={{ opacity: 0 }}
                   className="typing-pill"
                 >
                   <div className="typing-dots">
@@ -310,20 +341,19 @@ const ChatPage = () => {
                 />
               </div>
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.9 }}
                 className="premium-send-btn"
                 onClick={() => handleSendMessage()}
                 disabled={!newMessage.trim()}
               >
-                <Send size={24} />
+                <Send size={20} />
               </motion.button>
             </div>
           </>
         ) : (
           <div className="messenger-empty">
             <div className="empty-icon">
-              <MessageCircle size={40} />
+              <MessageCircle size={36} />
             </div>
             <h2>Your Inbox</h2>
             <p>Select a baller from the list to start a run.</p>

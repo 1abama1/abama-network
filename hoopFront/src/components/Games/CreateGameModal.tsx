@@ -4,6 +4,7 @@ import { X, Calendar, MapPin, Users, Info, Save } from 'lucide-react';
 import { gameService } from '../../api/services/gameService';
 import type { Game } from '../../types/game';
 import { useToast } from '../../components/Common/Toast';
+import '../../components/Profile/Profile.css';
 
 interface CreateGameModalProps {
   onClose: () => void;
