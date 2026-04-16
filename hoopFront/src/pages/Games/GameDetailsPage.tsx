@@ -67,7 +67,7 @@ const GameDetailsPage = () => {
     };
 
     const handleDeleteGame = async () => {
-        const confirmed = await confirm('Delete Game', 'Are you sure you want to cancel and delete this run? This action cannot be undone.');
+        const confirmed = await confirm('Delete Game', 'Are you sure you want to cancel and delete this run? This action cannot be undone.', { type: 'danger' });
         if (!confirmed) return;
 
         try {

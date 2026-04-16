@@ -96,7 +96,7 @@ const PostCard = ({ post, onUpdate, onNavigateToPost }: PostProps) => {
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const confirmed = await confirm('Delete Post', 'Are you sure you want to delete this post?');
+    const confirmed = await confirm('Delete Post', 'Are you sure you want to delete this post?', { type: 'danger' });
     if (!confirmed) return;
 
     try {

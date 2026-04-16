@@ -6,7 +6,7 @@ export const userService = {
     return axiosInstance.get<Profile>(`/users/profile/${username}`);
   },
   updateProfile(data: { bio?: string; height?: number; weight?: number; jump?: number; positions?: string[] }) {
-    return axiosInstance.post<Profile>('/users/profile', data);
+    return axiosInstance.put<Profile>('/users/profile', data);
   },
   follow(username: string) {
     return axiosInstance.post(`/users/follow/${username}`);
